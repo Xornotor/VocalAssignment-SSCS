@@ -35,7 +35,7 @@ def read_voice(name, voice):
     filename = filename + ".csv"
     with zipfile.ZipFile(zipname) as zf:
         with zf.open(filename) as f:
-            df = pd.read_csv(f)
+            df = pd.read_csv(f, header=None)
     return df
 
 def pick_random_song():
