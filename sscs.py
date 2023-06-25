@@ -3,11 +3,13 @@ import hdf5plugin
 import mido
 import h5py
 import json
+import time
 import zipfile
 import requests
 import psutil
 import numpy as np
 import pandas as pd
+from scipy.ndimage import gaussian_filter1d
 import matplotlib as mpl
 import matplotlib.pyplot as plt
 import tensorflow as tf
@@ -23,10 +25,10 @@ ray.init(ignore_reinit_error=True)
 
 ############################################################
 
-SAVE_MODEL = True
-LOAD_MODEL = False
-TRAINING = True
-EVALUATE = True
+SAVE_MODEL = False
+LOAD_MODEL = True
+TRAINING = False
+EVALUATE = False
 EPOCHS = 10
 COLD_PAUSE_BETWEEN_EPOCHS = False
 TRAINING_DTYPE = tf.float16
@@ -146,6 +148,95 @@ def res_voas_cnn_model():
 
 def voas_cnn_model():
     x_in = Input(shape=(360, SPLIT_SIZE, 1))
+    
+    x = BatchNormalization()(x_in)
+
+    x = Conv2D(filters=32, kernel_size=(3, 3), padding="same",
+        activation="relu", name="conv1")(x)
+
+    x = BatchNormalization()(x)
+
+    x = Conv2D(filters=32, kernel_size=(3, 3), padding="same",
+        activation="relu", name="conv2")(x)
+
+    x = BatchNormalization()(x)
+
+    x = Conv2D(filters=16, kernel_size=(70, 3), padding="same",
+        activation="relu", name="conv_harm_1")(x)
+
+    x = BatchNormalization()(x)
+
+    x = Conv2D(filters=16, kernel_size=(70, 3), padding="same",
+        activation="relu", name="conv_harm_2")(x)
+
+    ## start four branches now
+
+    x = BatchNormalization()(x)
+
+    ## branch 1
+    x1a = Conv2D(filters=16, kernel_size=(3, 3), padding="same",
+        activation="relu", name="conv1a")(x)
+
+    x1a = BatchNormalization()(x1a)
+
+    x1b = Conv2D(filters=16, kernel_size=(3, 3), padding="same",
+        activation="relu", name="conv1b")(x1a)
+
+    ## branch 2
+    x2a = Conv2D(filters=16, kernel_size=(3, 3), padding="same",
+        activation="relu", name="conv2a")(x)
+
+    x2a = BatchNormalization()(x2a)
+
+    x2b = Conv2D(filters=16, kernel_size=(3, 3), padding="same",
+        activation="relu", name="conv2b")(x2a)
+
+    ## branch 3
+
+    x3a = Conv2D(filters=16, kernel_size=(3, 3), padding="same",
+        activation="relu", name="conv3a")(x)
+
+    x3a = BatchNormalization()(x3a)
+
+    x3b = Conv2D(filters=16, kernel_size=(3, 3), padding="same",
+        activation="relu", name="conv3b")(x3a)
+
+    x4a = Conv2D(filters=16, kernel_size=(3, 3), padding="same",
+        activation="relu", name="conv4a")(x)
+
+    x4a = BatchNormalization()(x4a)
+
+    x4b = Conv2D(filters=16, kernel_size=(3, 3), padding="same",
+        activation="relu", name="conv4b"
+    )(x4a)
+
+
+    y1 = Conv2D(filters=1, kernel_size=1, name='conv_soprano',
+                padding='same', activation='sigmoid')(x1b)
+    y1 = tf.squeeze(y1, axis=-1, name='sop')
+
+    y2 = Conv2D(filters=1, kernel_size=1, name='conv_alto',
+                padding='same', activation='sigmoid')(x2b)
+    y2 = tf.squeeze(y2, axis=-1, name='alt')
+
+    y3 = Conv2D(filters=1, kernel_size=1, name='conv_tenor',
+                padding='same', activation='sigmoid')(x3b)
+    y3 = tf.squeeze(y3, axis=-1, name='ten')
+
+    y4 = Conv2D(filters=1, kernel_size=1, name='conv_bass',
+                padding='same', activation='sigmoid')(x4b)
+    y4 = tf.squeeze(y4, axis=-1, name='bas')
+
+    out = [y1, y2, y3, y4]
+
+    model = Model(inputs=x_in, outputs=out, name='voasCNN')
+
+    return model
+
+############################################################
+
+def downsample_voas_cnn_model():
+    x_in = Input(shape=(360, SPLIT_SIZE, 1))
 
     x = Resizing(216, int(SPLIT_SIZE/2), RESIZING_FILTER)(x_in)
     
@@ -239,28 +330,26 @@ def voas_cnn_model():
 
 ############################################################
 
-def initialize(save_model = True,
-               load_model = False,
-               training = True,
-               evaluate = True,
-               epochs = 10,
-               cold_pause_between_epochs = False,
-               training_dtype = tf.float16,
-               split_size = 256,
-               batch_size = 32,
-               resizing_filter = 'bilinear'):
-    SAVE_MODEL = save_model
-    LOAD_MODEL = load_model
-    TRAINING = training
-    EVALUATE = evaluate
-    EPOCHS = epochs
-    COLD_PAUSE_BETWEEN_EPOCHS = cold_pause_between_epochs
-    TRAINING_DTYPE = training_dtype
-    SPLIT_SIZE = split_size
-    BATCH_SIZE = batch_size
-    RESIZING_FILTER = resizing_filter
+def recall(y_true, y_pred):
+    true_positives = K.sum(K.round(K.clip(y_true * y_pred, 0, 1)))
+    possible_positives = K.sum(K.round(K.clip(y_true, 0, 1)))
+    recall_keras = true_positives / (possible_positives + K.epsilon())
+    return recall_keras
 
-    return
+############################################################
+
+def precision(y_true, y_pred):
+    true_positives = K.sum(K.round(K.clip(y_true * y_pred, 0, 1)))
+    predicted_positives = K.sum(K.round(K.clip(y_pred, 0, 1)))
+    precision_keras = true_positives / (predicted_positives + K.epsilon())
+    return precision_keras
+
+############################################################
+
+def f1(y_true, y_pred):
+    p = precision(y_true, y_pred)
+    r = recall(y_true, y_pred)
+    return 2 * ((p * r) / (p + r + K.epsilon()))
 
 ############################################################
 
@@ -325,7 +414,7 @@ class SSCS_Sequence(tf.keras.utils.Sequence):
         tmp_idx = self.idx_get[idx]
         tmp_split = self.split_get[idx]
 
-        batch_splits = np.array(list(map(self.get_split, tmp_idx, tmp_split)))
+        batch_splits = np.array(list(map(self.__get_split__, tmp_idx, tmp_split)))
 
         splits = [tf.convert_to_tensor(batch_splits[:, i], dtype=self.training_dtype) for i in range(5)]
 
@@ -333,7 +422,7 @@ class SSCS_Sequence(tf.keras.utils.Sequence):
     
     #-----------------------------------------------------------#
     
-    def get_split(self, idx, split):
+    def __get_split__(self, idx, split):
 
         file_access = f"{self.songs_dir}{self.filenames[idx]}.h5"
         data_min = split * self.split_size
@@ -404,10 +493,9 @@ def download():
 ############################################################
 
 def get_split(split='train'):
-    
-    if(split.lower() == 'train' or split.lower() == 'validate' or
-       split.lower() == 'test'):
-        split_list = json.load(open(splitname, 'r'))[split.lower()]
+    split_str = str(split).lower()
+    if(split_str == 'train' or split_str == 'validate' or split_str == 'test'):
+        split_list = json.load(open(splitname, 'r'))[split_str]
         return split_list
     else:
         raise NameError("Split should be 'train', 'validate' or 'test'.")
@@ -537,7 +625,7 @@ def get_sequence(split='train', start_index=0, end_index=1000):
 ############################################################
 
 def get_dataset(split='train', start_index=0, end_index=1000):
-    seq = get_sequence(0, 2)
+    seq = get_sequence(split, 0, 2)
     mix_test, satb_test = seq.__getitem__(0)
     ds_spec = tf.TensorSpec(shape=mix_test.shape, dtype=TRAINING_DTYPE)
     signature = (ds_spec, (ds_spec, ds_spec, ds_spec, ds_spec))
@@ -583,7 +671,7 @@ def downsample_bins(voice):
 ############################################################
 
 def create_midi(pr, write_path='./MIDI/midi_track.mid', ticks_per_beat=52,
-                tempo=90, save_to_file=True, program=53, channel=0):
+                tempo=77, save_to_file=True, program=53, channel=0):
     
     if(not os.path.exists(midi_dir)):
         os.mkdir(midi_dir)
@@ -664,7 +752,28 @@ def create_midi(pr, write_path='./MIDI/midi_track.mid', ticks_per_beat=52,
 
 ############################################################
 
-def song_to_midi(songname, write_path='./MIDI/midi_mix.mid'):
+def song_to_midi(sop, alto, ten, bass, write_path='./MIDI/midi_mix.mid'):
+
+    down_sop = downsample_bins(sop.T)
+    down_alto = downsample_bins(alto.T)
+    down_ten = downsample_bins(ten.T)
+    down_bass = downsample_bins(bass.T)
+
+    mid_sop = create_midi(down_sop, save_to_file=False, program=52, channel=0)
+    mid_alto = create_midi(down_alto, save_to_file=False, program=53, channel=1)
+    mid_ten = create_midi(down_ten, save_to_file=False, program=49, channel=2)
+    mid_bass = create_midi(down_bass, save_to_file=False, program=50, channel=3)
+
+    mid_mix = mido.MidiFile()
+    mid_mix.ticks_per_beat=mid_sop.ticks_per_beat
+    mid_mix.tracks = mid_sop.tracks + mid_alto.tracks + mid_ten.tracks + mid_bass.tracks
+    mid_mix.save(write_path)
+
+    return
+
+############################################################
+
+def songname_to_midi(songname, write_path='./MIDI/midi_mix.mid'):
 
     if(not os.path.exists(midi_dir)):
         os.mkdir(midi_dir)
@@ -697,7 +806,61 @@ def song_to_midi(songname, write_path='./MIDI/midi_mix.mid'):
 
 def random_song_to_midi(write_path='./MIDI/midi_mix.mid'):
     song = pick_random_song()
-    song_to_midi(song, write_path)
+    songname_to_midi(song, write_path)
     return
+
+############################################################
+
+def load_weights(model):
+    if(LOAD_MODEL and os.path.exists(checkpoint_dir)):
+        model.load_weights(checkpoint_dir)
+
+############################################################
+
+def train(model, ds_train, ds_val):
+
+    save_cb = tf.keras.callbacks.ModelCheckpoint(   filepath=checkpoint_dir,
+                                                    save_weights_only=True,
+                                                    verbose=1
+                                                )
+
+    if(TRAINING):
+            if(COLD_PAUSE_BETWEEN_EPOCHS):
+                for epoch in range(EPOCHS):
+                    if(SAVE_MODEL):
+                        model.fit(ds_train,
+                                    epochs=1,
+                                    callbacks=[save_cb],
+                                    validation_data=ds_val)
+                    else:
+                        model.fit(ds_train,
+                                    epochs=1,
+                                    validation_data=ds_val)
+                    if(epoch < EPOCHS - 1):
+                        print("Pausa para resfriar...")
+                        time.sleep(120)
+            else:
+                if(SAVE_MODEL):
+                    model.fit(ds_train,
+                                epochs=EPOCHS,
+                                callbacks=[save_cb],
+                                validation_data=ds_val)
+                else:
+                    model.fit(ds_train,
+                                epochs=EPOCHS,
+                                validation_data=ds_val)
+
+
+############################################################
+
+def prediction_postproc(input_array):
+    reshaped = np.moveaxis(input_array, 0, 1).reshape(360, -1)
+    argmax = np.argmax(reshaped, axis=0)
+    threshold = np.zeros((360, argmax.shape[0]))
+    for i in range(argmax.shape[0]):
+        threshold[argmax[i], i] = 1.0
+    filtered = np.array(gaussian_filter1d(threshold, 1, axis=0, mode='wrap'))
+    postproc = (filtered - np.min(filtered))/(np.max(filtered)-np.min(filtered))
+    return postproc
 
 ############################################################
