@@ -23,7 +23,6 @@ ray.init(ignore_reinit_error=True)
 
 ############################################################
 
-EXECUTE_ON_COLAB = False
 SAVE_MODEL = True
 LOAD_MODEL = False
 TRAINING = True
@@ -37,14 +36,9 @@ RESIZING_FILTER = 'bilinear'
 
 ############################################################
 
-if(EXECUTE_ON_COLAB):
-    dataset_dir = "/content/Datasets/"
-    checkpoint_dir = "/content/drive/MyDrive/SSCS/Checkpoints/sscs.ckpt"
-    midi_dir = "/content/MIDI/"
-else:
-    dataset_dir = "Datasets/"
-    checkpoint_dir = "Checkpoints/voas_cnn.keras"
-    midi_dir = "MIDI/"
+dataset_dir = "Datasets/"
+checkpoint_dir = "Checkpoints/voas_cnn.keras"
+midi_dir = "MIDI/"
 zipname = dataset_dir + "SSCS_HDF5.zip"
 sscs_dir = dataset_dir + "SSCS_HDF5/"
 
@@ -242,6 +236,31 @@ def voas_cnn_model():
     model = Model(inputs=x_in, outputs=out, name='voasCNN')
 
     return model
+
+############################################################
+
+def initialize(save_model = True,
+               load_model = False,
+               training = True,
+               evaluate = True,
+               epochs = 10,
+               cold_pause_between_epochs = False,
+               training_dtype = tf.float16,
+               split_size = 256,
+               batch_size = 32,
+               resizing_filter = 'bilinear'):
+    SAVE_MODEL = save_model
+    LOAD_MODEL = load_model
+    TRAINING = training
+    EVALUATE = evaluate
+    EPOCHS = epochs
+    COLD_PAUSE_BETWEEN_EPOCHS = cold_pause_between_epochs
+    TRAINING_DTYPE = training_dtype
+    SPLIT_SIZE = split_size
+    BATCH_SIZE = batch_size
+    RESIZING_FILTER = resizing_filter
+
+    return
 
 ############################################################
 
