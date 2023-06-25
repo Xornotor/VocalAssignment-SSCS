@@ -9,6 +9,7 @@ import requests
 import psutil
 import numpy as np
 import pandas as pd
+from scipy.ndimage import gaussian_filter1d
 import matplotlib as mpl
 import matplotlib.pyplot as plt
 import tensorflow as tf
@@ -329,28 +330,26 @@ def downsample_voas_cnn_model():
 
 ############################################################
 
-def initialize(save_model = True,
-               load_model = False,
-               training = True,
-               evaluate = True,
-               epochs = 10,
-               cold_pause_between_epochs = False,
-               training_dtype = tf.float16,
-               split_size = 256,
-               batch_size = 32,
-               resizing_filter = 'bilinear'):
-    SAVE_MODEL = save_model
-    LOAD_MODEL = load_model
-    TRAINING = training
-    EVALUATE = evaluate
-    EPOCHS = epochs
-    COLD_PAUSE_BETWEEN_EPOCHS = cold_pause_between_epochs
-    TRAINING_DTYPE = training_dtype
-    SPLIT_SIZE = split_size
-    BATCH_SIZE = batch_size
-    RESIZING_FILTER = resizing_filter
+def recall(y_true, y_pred):
+    true_positives = K.sum(K.round(K.clip(y_true * y_pred, 0, 1)))
+    possible_positives = K.sum(K.round(K.clip(y_true, 0, 1)))
+    recall_keras = true_positives / (possible_positives + K.epsilon())
+    return recall_keras
 
-    return
+############################################################
+
+def precision(y_true, y_pred):
+    true_positives = K.sum(K.round(K.clip(y_true * y_pred, 0, 1)))
+    predicted_positives = K.sum(K.round(K.clip(y_pred, 0, 1)))
+    precision_keras = true_positives / (predicted_positives + K.epsilon())
+    return precision_keras
+
+############################################################
+
+def f1(y_true, y_pred):
+    p = precision(y_true, y_pred)
+    r = recall(y_true, y_pred)
+    return 2 * ((p * r) / (p + r + K.epsilon()))
 
 ############################################################
 
@@ -851,5 +850,17 @@ def train(model, ds_train, ds_val):
                                 epochs=EPOCHS,
                                 validation_data=ds_val)
 
+
+############################################################
+
+def prediction_postproc(input_array):
+    reshaped = np.moveaxis(input_array, 0, 1).reshape(360, -1)
+    argmax = np.argmax(reshaped, axis=0)
+    threshold = np.zeros((360, argmax.shape[0]))
+    for i in range(argmax.shape[0]):
+        threshold[argmax[i], i] = 1.0
+    filtered = np.array(gaussian_filter1d(threshold, 1, axis=0, mode='wrap'))
+    postproc = (filtered - np.min(filtered))/(np.max(filtered)-np.min(filtered))
+    return postproc
 
 ############################################################
