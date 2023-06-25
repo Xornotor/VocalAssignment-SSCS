@@ -1,7 +1,7 @@
 import os
 import hdf5plugin
-import mido
 import h5py
+import mido
 import json
 import time
 import zipfile
@@ -551,7 +551,7 @@ def read_all_voices(name):
 ############################################################
 
 @ray.remote
-def split_and_reshape(df, split_size):
+def split_and_reshape(df, split_size=SPLIT_SIZE):
     
     split_arr = np.array_split(df, df.shape[1]/split_size, axis=1)
     split_arr = np.array([i.iloc[:, :split_size] for i in split_arr])
@@ -560,8 +560,7 @@ def split_and_reshape(df, split_size):
 ############################################################
 
 @ray.remote
-def read_all_voice_splits(name, split_size):
-    
+def parallel_read_all_voice_splits(name, split_size=SPLIT_SIZE):
     mix_raw, satb_raw = read_all_voices(name)
     df_voices = satb_raw
     df_voices.insert(0, mix_raw)
@@ -575,10 +574,16 @@ def read_all_voice_splits(name, split_size):
 
 ############################################################
 
-def read_multiple_songs_splits(split_size, first=0, amount=5, split='train'):
+def read_all_voice_splits(name, split_size=SPLIT_SIZE):
+    mix, s, a, t, b = ray.get(parallel_read_all_voice_splits.remote(name, split_size))
+    return mix, s, a, t, b
+
+############################################################
+
+def read_multiple_songs_splits(split_size=SPLIT_SIZE, first=0, amount=5, split='train'):
     
     songlist = pick_songlist(first, amount, split)
-    split_access = [read_all_voice_splits.remote(song, split_size) \
+    split_access = [parallel_read_all_voice_splits.remote(song, split_size) \
                     for song in songlist]
     split_list = ray.get(split_access)
 
@@ -643,6 +648,22 @@ def get_dataset(split='train', start_index=0, end_index=1000):
 
 ############################################################
 
+def downsample_threshold(item):
+    if item >= 1.0: return 1.0
+    else: return 0.0
+
+vectorized_downsample_threshold = np.vectorize(downsample_threshold)
+
+############################################################
+
+def downsample_limit(item):
+    if item >= 1.0: return 1.0
+    else: return item
+
+vectorized_downsample_limit = np.vectorize(downsample_limit)
+
+############################################################
+
 def downsample_bins(voice):
     voice_0 = np.array(voice.T[0::5]).T
     voice_1 = np.array(voice.T[1::5]).T
@@ -658,11 +679,7 @@ def downsample_bins(voice):
 
     voice_sums = voice_0 + voice_1 + voice_2 + voice_3 + voice_4
 
-    def downsample_threshold(item):
-        if item >= 1.0: return 1.0
-        else: return 0.0
-
-    vectorized_downsample_threshold = np.vectorize(downsample_threshold)
+    
 
     voice_sums = vectorized_downsample_threshold(voice_sums)
 

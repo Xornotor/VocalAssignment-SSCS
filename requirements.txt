@@ -1,0 +1,15 @@
+chardet
+hdf5plugin
+h5py
+mido
+json
+zipfile
+requests
+psutil
+numpy
+pandas
+scipy
+matplotlib
+jupyterlab
+ray
+-e .
