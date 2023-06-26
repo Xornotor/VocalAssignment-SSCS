@@ -359,6 +359,14 @@ def f1_prec_rec(prec, rec):
 
 ############################################################
 
+def bin_to_freq(bin):
+    freqscale = librosa.cqt_frequencies(n_bins=360, fmin=32.7, bins_per_octave=60)
+    return freqscale[bin]
+
+vec_bin_to_freq = np.vectorize(bin_to_freq)
+
+############################################################
+
 class SSCS_Sequence(tf.keras.utils.Sequence):
     
     #-----------------------------------------------------------#
