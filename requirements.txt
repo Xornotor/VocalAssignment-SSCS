@@ -11,5 +11,6 @@ pandas
 scipy
 matplotlib
 jupyterlab
+librosa
 ray
 -e .

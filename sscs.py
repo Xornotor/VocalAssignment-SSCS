@@ -6,6 +6,7 @@ import json
 import time
 import zipfile
 import requests
+import librosa
 import psutil
 import numpy as np
 import pandas as pd
@@ -350,6 +351,11 @@ def f1(y_true, y_pred):
     p = precision(y_true, y_pred)
     r = recall(y_true, y_pred)
     return 2 * ((p * r) / (p + r + K.epsilon()))
+
+############################################################
+
+def f1_prec_rec(prec, rec):
+    return 2 * (prec * rec) / (prec + rec)
 
 ############################################################
 
