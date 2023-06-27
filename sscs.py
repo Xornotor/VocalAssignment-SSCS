@@ -7,6 +7,7 @@ import time
 import zipfile
 import requests
 import librosa
+import mir_eval
 import psutil
 import numpy as np
 import pandas as pd
@@ -351,19 +352,6 @@ def f1(y_true, y_pred):
     p = precision(y_true, y_pred)
     r = recall(y_true, y_pred)
     return 2 * ((p * r) / (p + r + K.epsilon()))
-
-############################################################
-
-def f1_prec_rec(prec, rec):
-    return 2 * (prec * rec) / (prec + rec)
-
-############################################################
-
-def bin_to_freq(bin):
-    freqscale = librosa.cqt_frequencies(n_bins=360, fmin=32.7, bins_per_octave=60)
-    return freqscale[bin]
-
-vec_bin_to_freq = np.vectorize(bin_to_freq)
 
 ############################################################
 
@@ -893,5 +881,27 @@ def prediction_postproc(input_array):
     filtered = np.array(gaussian_filter1d(threshold, 1, axis=0, mode='wrap'))
     postproc = (filtered - np.min(filtered))/(np.max(filtered)-np.min(filtered))
     return postproc
+
+############################################################
+
+freqscale = librosa.cqt_frequencies(n_bins=360, fmin=32.7, bins_per_octave=60)
+
+def bin_to_freq(bin):
+    return freqscale[bin]
+
+vec_bin_to_freq = np.vectorize(bin_to_freq)
+
+############################################################
+
+def f_score(y_true, y_pred):
+    timescale = np.arange(0, 0.011 * (y_true.shape[1]), 0.011)[:y_true.shape[1]]
+    y_true_argmax = np.argmax(y_true, axis=0)
+    y_pred_argmax = np.argmax(y_pred, axis=0)
+    y_true_freqs = vec_bin_to_freq(y_true_argmax).reshape(-1, 1)
+    y_pred_freqs = vec_bin_to_freq(y_pred_argmax).reshape(-1, 1)
+    #mir_eval.multipitch.validate(timescale, y_true_freqs, timescale, y_pred_freqs)
+    metrics = mir_eval.multipitch.metrics(timescale, y_true_freqs, timescale, y_pred_freqs)
+    f_measure = 2 * (metrics[0] * metrics[1]) / (metrics[0] + metrics[1] + K.epsilon())
+    return f_measure
 
 ############################################################
