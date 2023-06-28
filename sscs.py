@@ -11,6 +11,7 @@ import mir_eval
 import psutil
 import numpy as np
 import pandas as pd
+import datetime
 from scipy.ndimage import gaussian_filter1d
 import matplotlib as mpl
 import matplotlib.pyplot as plt
@@ -24,6 +25,7 @@ from keras import backend as K
 import ray
 
 ray.init(ignore_reinit_error=True)
+os.system("load_ext tensorboard")
 
 ############################################################
 
@@ -38,12 +40,15 @@ RESIZING_FILTER = 'bilinear'
 
 dataset_dir = "Datasets/"
 checkpoint_dir = "Checkpoints/voas_cnn.keras"
+log_dir = "Logs/voas_cnn/"
 midi_dir = "MIDI/"
 zipname = dataset_dir + "SSCS_HDF5.zip"
 sscs_dir = dataset_dir + "SSCS_HDF5/"
 
 songs_dir = sscs_dir + "sscs/"
 splitname = sscs_dir + "sscs_splits.json"
+
+############################################################
 
 ############################################################
 
@@ -842,23 +847,26 @@ def load_weights(model, ckpt_dir=checkpoint_dir):
 ############################################################
 
 def train(model, ds_train, ds_val, epochs=EPOCHS,
-          save_model=False, ckpt_dir=checkpoint_dir):
+          save_model=False, ckpt_dir=checkpoint_dir, log_dir=log_dir):
 
     save_cb = tf.keras.callbacks.ModelCheckpoint(   filepath=ckpt_dir,
                                                     save_weights_only=True,
                                                     verbose=1
                                                 )
+    
+    logdir = log_dir + datetime.datetime.now().strftime("%Y%m%d-%H%M%S")
+    tensorboard_cb = tf.keras.callbacks.TensorBoard(log_dir=logdir, histogram_freq=1)
 
     if(save_model):
         model.fit(  ds_train,
                     epochs=epochs,
-                    callbacks=[save_cb],
+                    callbacks=[save_cb, tensorboard_cb],
                     validation_data=ds_val)
     else:
         model.fit(  ds_train,
                     epochs=epochs,
+                    callbacks=[tensorboard_cb],
                     validation_data=ds_val)
-
 
 ############################################################
 
