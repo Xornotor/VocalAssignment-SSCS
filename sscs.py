@@ -17,7 +17,7 @@ import matplotlib.pyplot as plt
 import tensorflow as tf
 from tensorflow.keras import Model
 from tensorflow.keras.optimizers import Adam
-from tensorflow.keras.losses import BinaryCrossentropy, CategoricalCrossentropy
+from tensorflow.keras.losses import BinaryCrossentropy, Reduction
 from tensorflow.keras.metrics import Recall, Precision
 from tensorflow.keras.layers import Input, Resizing, Conv2D, BatchNormalization, Multiply
 from keras import backend as K
@@ -27,15 +27,11 @@ ray.init(ignore_reinit_error=True)
 
 ############################################################
 
-SAVE_MODEL = False
-LOAD_MODEL = True
-TRAINING = False
-EVALUATE = False
 EPOCHS = 10
-COLD_PAUSE_BETWEEN_EPOCHS = False
 TRAINING_DTYPE = tf.float16
 SPLIT_SIZE = 256
-BATCH_SIZE = 32
+BATCH_SIZE = 24
+LEARNING_RATE = 2e-3
 RESIZING_FILTER = 'bilinear'
 
 ############################################################
@@ -51,7 +47,7 @@ splitname = sscs_dir + "sscs_splits.json"
 
 ############################################################
 
-def res_voas_cnn_model():
+def mask_voas_cnn_model():
     x_in = Input(shape=(360, SPLIT_SIZE, 1))
 
     x = Resizing(90, int(SPLIT_SIZE/2), RESIZING_FILTER)(x_in)
@@ -144,6 +140,9 @@ def res_voas_cnn_model():
 
     model = Model(inputs=x_in, outputs=out, name='voasCNN')
 
+    model.compile(optimizer=Adam(learning_rate=LEARNING_RATE),
+                 loss=BinaryCrossentropy(reduction=Reduction.SUM_OVER_BATCH_SIZE))
+
     return model
 
 ############################################################
@@ -232,6 +231,9 @@ def voas_cnn_model():
     out = [y1, y2, y3, y4]
 
     model = Model(inputs=x_in, outputs=out, name='voasCNN')
+
+    model.compile(optimizer=Adam(learning_rate=LEARNING_RATE),
+                 loss=BinaryCrossentropy(reduction=Reduction.SUM_OVER_BATCH_SIZE))
 
     return model
 
@@ -327,6 +329,9 @@ def downsample_voas_cnn_model():
     out = [y1, y2, y3, y4]
 
     model = Model(inputs=x_in, outputs=out, name='voasCNN')
+
+    model.compile(optimizer=Adam(learning_rate=LEARNING_RATE),
+                 loss=BinaryCrossentropy(reduction=Reduction.SUM_OVER_BATCH_SIZE))
 
     return model
 
@@ -830,44 +835,29 @@ def random_song_to_midi(write_path='./MIDI/midi_mix.mid'):
 
 ############################################################
 
-def load_weights(model):
-    if(LOAD_MODEL and os.path.exists(checkpoint_dir)):
-        model.load_weights(checkpoint_dir)
+def load_weights(model, ckpt_dir=checkpoint_dir):
+    if(os.path.exists(ckpt_dir)):
+        model.load_weights(ckpt_dir)
 
 ############################################################
 
-def train(model, ds_train, ds_val):
+def train(model, ds_train, ds_val, epochs=EPOCHS,
+          save_model=False, ckpt_dir=checkpoint_dir):
 
-    save_cb = tf.keras.callbacks.ModelCheckpoint(   filepath=checkpoint_dir,
+    save_cb = tf.keras.callbacks.ModelCheckpoint(   filepath=ckpt_dir,
                                                     save_weights_only=True,
                                                     verbose=1
                                                 )
 
-    if(TRAINING):
-            if(COLD_PAUSE_BETWEEN_EPOCHS):
-                for epoch in range(EPOCHS):
-                    if(SAVE_MODEL):
-                        model.fit(ds_train,
-                                    epochs=1,
-                                    callbacks=[save_cb],
-                                    validation_data=ds_val)
-                    else:
-                        model.fit(ds_train,
-                                    epochs=1,
-                                    validation_data=ds_val)
-                    if(epoch < EPOCHS - 1):
-                        print("Pausa para resfriar...")
-                        time.sleep(120)
-            else:
-                if(SAVE_MODEL):
-                    model.fit(ds_train,
-                                epochs=EPOCHS,
-                                callbacks=[save_cb],
-                                validation_data=ds_val)
-                else:
-                    model.fit(ds_train,
-                                epochs=EPOCHS,
-                                validation_data=ds_val)
+    if(save_model):
+        model.fit(  ds_train,
+                    epochs=epochs,
+                    callbacks=[save_cb],
+                    validation_data=ds_val)
+    else:
+        model.fit(  ds_train,
+                    epochs=epochs,
+                    validation_data=ds_val)
 
 
 ############################################################
