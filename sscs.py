@@ -32,7 +32,7 @@ os.system("load_ext tensorboard")
 EPOCHS = 10
 TRAINING_DTYPE = tf.float16
 SPLIT_SIZE = 256
-BATCH_SIZE = 24
+BATCH_SIZE = 16
 LEARNING_RATE = 2e-3
 RESIZING_FILTER = 'bilinear'
 
