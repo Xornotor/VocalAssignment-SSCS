@@ -52,7 +52,7 @@ splitname = sscs_dir + "sscs_splits.json"
 
 ############################################################
 
-def mask_voas_cnn_model():
+def mask_voas_cnn_model(l_rate = LEARNING_RATE):
     x_in = Input(shape=(360, SPLIT_SIZE, 1))
 
     x = Resizing(90, int(SPLIT_SIZE/2), RESIZING_FILTER)(x_in)
@@ -145,14 +145,14 @@ def mask_voas_cnn_model():
 
     model = Model(inputs=x_in, outputs=out, name='voasCNN')
 
-    model.compile(optimizer=Adam(learning_rate=LEARNING_RATE),
+    model.compile(optimizer=Adam(learning_rate=l_rate),
                  loss=BinaryCrossentropy(reduction=Reduction.SUM_OVER_BATCH_SIZE))
 
     return model
 
 ############################################################
 
-def voas_cnn_model():
+def voas_cnn_model(l_rate = LEARNING_RATE):
     x_in = Input(shape=(360, SPLIT_SIZE, 1))
     
     x = BatchNormalization()(x_in)
@@ -237,14 +237,14 @@ def voas_cnn_model():
 
     model = Model(inputs=x_in, outputs=out, name='voasCNN')
 
-    model.compile(optimizer=Adam(learning_rate=LEARNING_RATE),
+    model.compile(optimizer=Adam(learning_rate=l_rate),
                  loss=BinaryCrossentropy(reduction=Reduction.SUM_OVER_BATCH_SIZE))
 
     return model
 
 ############################################################
 
-def downsample_voas_cnn_model():
+def downsample_voas_cnn_model(l_rate = LEARNING_RATE):
     x_in = Input(shape=(360, SPLIT_SIZE, 1))
 
     x = Resizing(216, int(SPLIT_SIZE/2), RESIZING_FILTER)(x_in)
@@ -335,7 +335,7 @@ def downsample_voas_cnn_model():
 
     model = Model(inputs=x_in, outputs=out, name='voasCNN')
 
-    model.compile(optimizer=Adam(learning_rate=LEARNING_RATE),
+    model.compile(optimizer=Adam(learning_rate=l_rate),
                  loss=BinaryCrossentropy(reduction=Reduction.SUM_OVER_BATCH_SIZE))
 
     return model
