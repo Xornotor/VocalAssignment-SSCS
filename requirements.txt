@@ -12,5 +12,6 @@ scipy
 matplotlib
 jupyterlab
 librosa
+mir_eval
 ray
 -e .

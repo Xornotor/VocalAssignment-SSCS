@@ -32,7 +32,7 @@ os.system("load_ext tensorboard")
 EPOCHS = 10
 TRAINING_DTYPE = tf.float16
 SPLIT_SIZE = 256
-BATCH_SIZE = 16
+BATCH_SIZE = 24
 LEARNING_RATE = 2e-3
 RESIZING_FILTER = 'bilinear'
 
@@ -901,5 +901,65 @@ def f_score(y_true, y_pred):
     metrics = mir_eval.multipitch.metrics(timescale, y_true_freqs, timescale, y_pred_freqs)
     f_measure = 2 * (metrics[0] * metrics[1]) / (metrics[0] + metrics[1] + K.epsilon())
     return f_measure
+
+############################################################
+
+def boxplot(f_score_array):    
+    fig, ax = plt.subplots(figsize=(4, 5))
+    ax.boxplot(f_score_array.T)
+    ax.set_ylim([0, 1])
+    ax.yaxis.grid(True)
+    ax.xaxis.grid(False)
+
+    print(np.median(f_score_array[0]), np.median(f_score_array[1]),
+          np.median(f_score_array[2]), np.median(f_score_array[3]))
+
+    plt.show()
+
+
+
+def joint_f_histograms(f_scores):
+    s_counts, s_bins = np.histogram(f_scores[0], bins=100)
+    a_counts, a_bins = np.histogram(f_scores[1], bins=100)
+    t_counts, t_bins = np.histogram(f_scores[2], bins=100)
+    b_counts, b_bins = np.histogram(f_scores[3], bins=100)
+    plt.figure(figsize=(12,4.5))
+    plt.stairs(s_counts, s_bins, label='soprano')
+    plt.stairs(a_counts, a_bins, label='alto')
+    plt.stairs(t_counts, t_bins, label='tenor')
+    plt.stairs(b_counts, b_bins, label='bass')
+    plt.legend()
+    plt.show()
+
+############################################################
+
+def voice_f_histograms(f_scores):
+    s_counts, s_bins = np.histogram(f_scores[0], bins=100)
+    a_counts, a_bins = np.histogram(f_scores[1], bins=100)
+    t_counts, t_bins = np.histogram(f_scores[2], bins=100)
+    b_counts, b_bins = np.histogram(f_scores[3], bins=100)
+
+    fig, axs = plt.subplots(2, 2, figsize=(15, 7))
+    axs[0][0].stairs(s_counts, s_bins, fill=True)
+    axs[0][0].set_title("Soprano - Histograma")
+    axs[0][0].set_xlim([0, 1])
+    axs[0][0].set_ylim([0, 70])
+
+    axs[0][1].stairs(a_counts, a_bins, fill=True, color='orange')
+    axs[0][1].set_title("Alto - Histograma")
+    axs[0][1].set_xlim([0, 1])
+    axs[0][1].set_ylim([0, 70])
+
+    axs[1][0].stairs(t_counts, t_bins, fill=True, color='green')
+    axs[1][0].set_title("Tenor - Histograma")
+    axs[1][0].set_xlim([0, 1])
+    axs[1][0].set_ylim([0, 70])
+
+    axs[1][1].stairs(b_counts, b_bins, fill=True, color='red')
+    axs[1][1].set_title("Bass - Histograma")
+    axs[1][1].set_xlim([0, 1])
+    axs[1][1].set_ylim([0, 70])
+
+    plt.show()
 
 ############################################################
