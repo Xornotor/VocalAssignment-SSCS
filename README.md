@@ -9,4 +9,4 @@
 |   #3   | MaskVoasCNN | 30     | 2e-3  | 16         | 256        | 4 horas         | Sim         | 1000  | 300 | 300  |
 |   #4   | MaskVoasCNN | 30     | 5e-3  | 16         | 256        | 4 horas         | Sim         | 1000  | 300 | 300  |
 |   #5   | MaskVoasCNN | 30     | 1e-3  | 24         | 256        | 4 horas         | Sim         | 1000  | 300 | 300  |
-|   #6   | MaskVoasCNN | 50     | 2e-3  | 24         | 256        | X horas         | Sim         | 1000  | 300 | 300  |
+|   #6   | MaskVoasCNN | 50     | 2e-3  | 24         | 256        | 6,5 horas       | Sim         | 1000  | 300 | 300  |
