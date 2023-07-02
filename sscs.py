@@ -874,8 +874,12 @@ def prediction_postproc(input_array):
     reshaped = np.moveaxis(input_array, 0, 1).reshape(360, -1)
     argmax = np.argmax(reshaped, axis=0)
     threshold = np.zeros((360, argmax.shape[0]))
-    for i in range(argmax.shape[0]):
-        threshold[argmax[i], i] = 1.0
+
+    def threshold_set(idx):
+        threshold[argmax[idx], idx] = 1.0
+        return True
+    
+    thr_set = [threshold_set(idx) for idx in range(argmax.shape[0])]
     filtered = np.array(gaussian_filter1d(threshold, 1, axis=0, mode='wrap'))
     postproc = (filtered - np.min(filtered))/(np.max(filtered)-np.min(filtered))
     return postproc
@@ -897,8 +901,12 @@ def f_score(y_true, y_pred):
     y_pred_argmax = np.argmax(y_pred, axis=0)
     y_true_freqs = vec_bin_to_freq(y_true_argmax).reshape(-1, 1)
     y_pred_freqs = vec_bin_to_freq(y_pred_argmax).reshape(-1, 1)
+    n_ref = mir_eval.multipitch.compute_num_freqs(y_true_argmax)
+    n_est = mir_eval.multipitch.compute_num_freqs(y_pred_argmax)
+    true_pos = mir_eval.multipitch.compute_num_true_positives(y_true_freqs, y_pred_freqs)
     #mir_eval.multipitch.validate(timescale, y_true_freqs, timescale, y_pred_freqs)
-    metrics = mir_eval.multipitch.metrics(timescale, y_true_freqs, timescale, y_pred_freqs)
+    #metrics = mir_eval.multipitch.metrics(timescale, y_true_freqs, timescale, y_pred_freqs)
+    metrics = mir_eval.multipitch.compute_accuracy(true_pos, n_ref, n_est)
     f_measure = 2 * (metrics[0] * metrics[1]) / (metrics[0] + metrics[1] + K.epsilon())
     return f_measure
 
@@ -916,7 +924,7 @@ def boxplot(f_score_array):
 
     plt.show()
 
-
+############################################################
 
 def joint_f_histograms(f_scores):
     s_counts, s_bins = np.histogram(f_scores[0], bins=100)
