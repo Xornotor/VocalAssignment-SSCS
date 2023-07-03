@@ -932,6 +932,7 @@ def joint_f_histograms(f_scores):
     t_counts, t_bins = np.histogram(f_scores[2], bins=100)
     b_counts, b_bins = np.histogram(f_scores[3], bins=100)
     plt.figure(figsize=(12,4.5))
+    plt.grid(visible=True, axis='y')
     plt.stairs(s_counts, s_bins, label='soprano')
     plt.stairs(a_counts, a_bins, label='alto')
     plt.stairs(t_counts, t_bins, label='tenor')
@@ -948,26 +949,35 @@ def voice_f_histograms(f_scores):
     b_counts, b_bins = np.histogram(f_scores[3], bins=100)
 
     fig, axs = plt.subplots(2, 2, figsize=(15, 7))
+    axs[0][0].yaxis.grid(True)
+    axs[0][0].xaxis.grid(False)
     axs[0][0].stairs(s_counts, s_bins, fill=True)
     axs[0][0].set_title("Soprano - Histograma")
     axs[0][0].set_xlim([0, 1])
-    axs[0][0].set_ylim([0, 70])
+    axs[0][0].set_ylim([0, 120])
+    
 
+    axs[0][1].yaxis.grid(True)
+    axs[0][1].xaxis.grid(False)
     axs[0][1].stairs(a_counts, a_bins, fill=True, color='orange')
     axs[0][1].set_title("Alto - Histograma")
     axs[0][1].set_xlim([0, 1])
-    axs[0][1].set_ylim([0, 70])
-
+    axs[0][1].set_ylim([0, 120])
+    
+    axs[1][0].yaxis.grid(True)
+    axs[1][0].xaxis.grid(False)
     axs[1][0].stairs(t_counts, t_bins, fill=True, color='green')
     axs[1][0].set_title("Tenor - Histograma")
     axs[1][0].set_xlim([0, 1])
-    axs[1][0].set_ylim([0, 70])
-
+    axs[1][0].set_ylim([0, 120])
+    
+    axs[1][1].yaxis.grid(True)
+    axs[1][1].xaxis.grid(False)
     axs[1][1].stairs(b_counts, b_bins, fill=True, color='red')
     axs[1][1].set_title("Bass - Histograma")
     axs[1][1].set_xlim([0, 1])
-    axs[1][1].set_ylim([0, 70])
-
+    axs[1][1].set_ylim([0, 120])
+    
     plt.show()
 
 ############################################################
