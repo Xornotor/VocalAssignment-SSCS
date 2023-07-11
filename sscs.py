@@ -14,6 +14,7 @@ import pandas as pd
 import datetime
 from scipy.ndimage import gaussian_filter1d
 import matplotlib as mpl
+from matplotlib import font_manager as fm
 import matplotlib.pyplot as plt
 import tensorflow as tf
 from tensorflow.keras import Model
@@ -23,6 +24,13 @@ from tensorflow.keras.metrics import Recall, Precision
 from tensorflow.keras.layers import Input, Resizing, Conv2D, BatchNormalization, Multiply
 from keras import backend as K
 import ray
+
+font_dirs = './Assets/Fonts/'
+font_files = fm.findSystemFonts(fontpaths=font_dirs)
+for font in font_files: fm.fontManager.addfont(font)
+
+plt.rcParams['font.family'] = "Hanken Grotesk"
+plt.rcParams['font.size'] = 14
 
 ray.init(ignore_reinit_error=True)
 os.system("load_ext tensorboard")
@@ -726,26 +734,6 @@ def read_multiple_songs_splits(split_size=SPLIT_SIZE, first=0, amount=5, split='
 
 ############################################################
 
-def plot(dataframe, colorbar=False):
-
-    aspect_ratio = (3/8)*dataframe.shape[1]/dataframe.shape[0]
-    fig, ax = plt.subplots(figsize=(13, 7))
-    im = ax.imshow(dataframe, interpolation='nearest', aspect=aspect_ratio,
-        cmap = mpl.colormaps['BuPu'])
-    if colorbar:
-        fig.colorbar(im, shrink=0.5)
-    ax.invert_yaxis()
-    plt.show()
-
-############################################################
-
-def plot_random(voice, split='train'):
-    
-    random_song = pick_random_song(split)
-    plot(ray.get(read_voice.remote(random_song, voice)))
-
-############################################################
-
 def get_sequence(split='train', start_index=0, end_index=1000):
     return SSCS_Sequence(get_split(split)[start_index:end_index])
 
@@ -1023,11 +1011,12 @@ def f_score(y_true, y_pred):
 ############################################################
 
 def boxplot(f_score_array):    
-    fig, ax = plt.subplots(figsize=(4, 5))
+    fig, ax = plt.subplots(figsize=(4, 5), dpi=300)
     ax.boxplot(f_score_array.T)
     ax.set_ylim([0, 1])
     ax.yaxis.grid(True)
     ax.xaxis.grid(False)
+    ax.set_xticklabels(['Soprano', 'Alto', 'Tenor', 'Bass'])
 
     print(np.median(f_score_array[0]), np.median(f_score_array[1]),
           np.median(f_score_array[2]), np.median(f_score_array[3]))
@@ -1041,7 +1030,7 @@ def joint_f_histograms(f_scores):
     a_counts, a_bins = np.histogram(f_scores[1], bins=100)
     t_counts, t_bins = np.histogram(f_scores[2], bins=100)
     b_counts, b_bins = np.histogram(f_scores[3], bins=100)
-    plt.figure(figsize=(12,4.5))
+    plt.figure(figsize=(12,4.5), dpi=300)
     plt.grid(visible=True, axis='y')
     plt.stairs(s_counts, s_bins, label='soprano')
     plt.stairs(a_counts, a_bins, label='alto')
@@ -1058,7 +1047,7 @@ def voice_f_histograms(f_scores):
     t_counts, t_bins = np.histogram(f_scores[2], bins=100)
     b_counts, b_bins = np.histogram(f_scores[3], bins=100)
 
-    fig, axs = plt.subplots(2, 2, figsize=(15, 7))
+    fig, axs = plt.subplots(2, 2, figsize=(15, 7), dpi=300)
     axs[0][0].yaxis.grid(True)
     axs[0][0].xaxis.grid(False)
     axs[0][0].stairs(s_counts, s_bins, fill=True)
@@ -1089,5 +1078,25 @@ def voice_f_histograms(f_scores):
     axs[1][1].set_ylim([0, 120])
     
     plt.show()
+
+############################################################
+
+def plot(dataframe, colorbar=False):
+
+    aspect_ratio = (3/8)*dataframe.shape[1]/dataframe.shape[0]
+    fig, ax = plt.subplots(figsize=(13, 7), dpi=300)
+    im = ax.imshow(dataframe, interpolation='nearest', aspect=aspect_ratio,
+        cmap = mpl.colormaps['BuPu'])
+    if colorbar:
+        fig.colorbar(im, shrink=0.5)
+    ax.invert_yaxis()
+    plt.show()
+
+############################################################
+
+def plot_random(voice, split='train'):
+    
+    random_song = pick_random_song(split)
+    plot(ray.get(read_voice.remote(random_song, voice)))
 
 ############################################################
