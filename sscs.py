@@ -249,6 +249,106 @@ def downsample_voas_cnn_model(l_rate = LEARNING_RATE):
 
 ############################################################
 
+def downsample_voas_cnn_v2_model(l_rate = LEARNING_RATE):
+    x_in = Input(shape=(360, SPLIT_SIZE, 1))
+
+    x = Resizing(90, int(SPLIT_SIZE/2), RESIZING_FILTER,
+                 name="downscale")(x_in)
+    
+    x = BatchNormalization()(x)
+
+    x = Conv2D(filters=32, kernel_size=(3, 3), padding="same",
+        activation="relu", name="conv1")(x)
+
+    x = BatchNormalization()(x)
+
+    x = Conv2D(filters=32, kernel_size=(3, 3), padding="same",
+        activation="relu", name="conv2")(x)
+
+    x = BatchNormalization()(x)
+
+    x = Conv2D(filters=16, kernel_size=(70, 3), padding="same",
+        activation="relu", name="conv_harm_1")(x)
+
+    x = BatchNormalization()(x)
+
+    x = Conv2D(filters=16, kernel_size=(70, 3), padding="same",
+        activation="relu", name="conv_harm_2")(x)
+    
+    x = BatchNormalization()(x)
+
+    ## Resize to original resolution
+
+    x = Resizing(360, SPLIT_SIZE, RESIZING_FILTER,
+                 name="upscale")(x)
+
+    ## start four branches now
+
+    ## branch 1
+    x1a = Conv2D(filters=16, kernel_size=(3, 3), padding="same",
+        activation="relu", name="conv1a")(x)
+
+    x1a = BatchNormalization()(x1a)
+
+    x1b = Conv2D(filters=16, kernel_size=(3, 3), padding="same",
+        activation="relu", name="conv1b")(x1a)
+
+    ## branch 2
+    x2a = Conv2D(filters=16, kernel_size=(3, 3), padding="same",
+        activation="relu", name="conv2a")(x)
+
+    x2a = BatchNormalization()(x2a)
+
+    x2b = Conv2D(filters=16, kernel_size=(3, 3), padding="same",
+        activation="relu", name="conv2b")(x2a)
+
+    ## branch 3
+
+    x3a = Conv2D(filters=16, kernel_size=(3, 3), padding="same",
+        activation="relu", name="conv3a")(x)
+
+    x3a = BatchNormalization()(x3a)
+
+    x3b = Conv2D(filters=16, kernel_size=(3, 3), padding="same",
+        activation="relu", name="conv3b")(x3a)
+
+    x4a = Conv2D(filters=16, kernel_size=(3, 3), padding="same",
+        activation="relu", name="conv4a")(x)
+
+    x4a = BatchNormalization()(x4a)
+
+    x4b = Conv2D(filters=16, kernel_size=(3, 3), padding="same",
+        activation="relu", name="conv4b"
+    )(x4a)
+
+
+    y1 = Conv2D(filters=1, kernel_size=1, name='conv_soprano',
+                padding='same', activation='sigmoid')(x1b)
+    y1 = tf.squeeze(y1, axis=-1, name='sop')
+
+    y2 = Conv2D(filters=1, kernel_size=1, name='conv_alto',
+                padding='same', activation='sigmoid')(x2b)
+    y2 = tf.squeeze(y2, axis=-1, name='alt')
+
+    y3 = Conv2D(filters=1, kernel_size=1, name='conv_tenor',
+                padding='same', activation='sigmoid')(x3b)
+    y3 = tf.squeeze(y3, axis=-1, name='ten')
+
+    y4 = Conv2D(filters=1, kernel_size=1, name='conv_bass',
+                padding='same', activation='sigmoid')(x4b)
+    y4 = tf.squeeze(y4, axis=-1, name='bas')
+
+    out = [y1, y2, y3, y4]
+
+    model = Model(inputs=x_in, outputs=out, name='DownsampleVoasCNNv2')
+
+    model.compile(optimizer=Adam(learning_rate=l_rate),
+                 loss=BinaryCrossentropy(reduction=Reduction.SUM_OVER_BATCH_SIZE))
+
+    return model
+
+############################################################
+
 def mask_voas_cnn_model(l_rate = LEARNING_RATE):
     x_in = Input(shape=(360, SPLIT_SIZE, 1))
 
