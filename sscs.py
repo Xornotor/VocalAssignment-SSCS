@@ -1010,8 +1010,44 @@ def f_score(y_true, y_pred):
 
 ############################################################
 
+def f_score_test_precompute(model, save_dir):
+    songs = pick_songlist(amount=805, split='test')
+    #songs = sscs.pick_songlist(amount=300, split='test')
+
+    def multivoice_f_score(song):
+        mix, s, a, t, b = read_all_voice_splits(song)
+        s_pred, a_pred, t_pred, b_pred = model.predict(mix)
+
+        mix = np.moveaxis(mix, 0, 1).reshape(360, -1)
+        s = np.moveaxis(s, 0, 1).reshape(360, -1)
+        a = np.moveaxis(a, 0, 1).reshape(360, -1)
+        t = np.moveaxis(t, 0, 1).reshape(360, -1)
+        b = np.moveaxis(b, 0, 1).reshape(360, -1)
+
+        s_pred_postproc = prediction_postproc(s_pred).astype(np.float32)
+        a_pred_postproc = prediction_postproc(a_pred).astype(np.float32)
+        t_pred_postproc = prediction_postproc(t_pred).astype(np.float32)
+        b_pred_postproc = prediction_postproc(b_pred).astype(np.float32)
+        mix_pred_postproc = s_pred_postproc + a_pred_postproc + t_pred_postproc + b_pred_postproc
+        mix_pred_postproc = vectorized_downsample_limit(mix_pred_postproc)
+
+        s_fscore = f_score(s, s_pred_postproc)
+        a_fscore = f_score(a, a_pred_postproc)
+        t_fscore = f_score(t, t_pred_postproc)
+        b_fscore = f_score(b, b_pred_postproc)
+
+        return [s_fscore, a_fscore, t_fscore, b_fscore]
+
+    f_scores = np.array(list(map(multivoice_f_score, songs)))
+    f_scores = f_scores.T
+    np.save(save_dir, f_scores)
+    
+    return f_scores
+
+############################################################
+
 def boxplot(f_score_array):    
-    fig, ax = plt.subplots(figsize=(4, 5), dpi=300)
+    fig, ax = plt.subplots(figsize=(4, 5), dpi=200)
     ax.boxplot(f_score_array.T)
     ax.set_ylim([0, 1])
     ax.yaxis.grid(True)
@@ -1030,7 +1066,7 @@ def joint_f_histograms(f_scores):
     a_counts, a_bins = np.histogram(f_scores[1], bins=100)
     t_counts, t_bins = np.histogram(f_scores[2], bins=100)
     b_counts, b_bins = np.histogram(f_scores[3], bins=100)
-    plt.figure(figsize=(12,4.5), dpi=300)
+    plt.figure(figsize=(12,4.5), dpi=200)
     plt.grid(visible=True, axis='y')
     plt.stairs(s_counts, s_bins, label='soprano')
     plt.stairs(a_counts, a_bins, label='alto')
@@ -1047,7 +1083,7 @@ def voice_f_histograms(f_scores):
     t_counts, t_bins = np.histogram(f_scores[2], bins=100)
     b_counts, b_bins = np.histogram(f_scores[3], bins=100)
 
-    fig, axs = plt.subplots(2, 2, figsize=(15, 7), dpi=300)
+    fig, axs = plt.subplots(2, 2, figsize=(15, 7), dpi=200)
     axs[0][0].yaxis.grid(True)
     axs[0][0].xaxis.grid(False)
     axs[0][0].stairs(s_counts, s_bins, fill=True)
@@ -1081,10 +1117,12 @@ def voice_f_histograms(f_scores):
 
 ############################################################
 
-def plot(dataframe, colorbar=False):
+def plot(dataframe, colorbar=False, title=''):
 
     aspect_ratio = (3/8)*dataframe.shape[1]/dataframe.shape[0]
-    fig, ax = plt.subplots(figsize=(13, 7), dpi=300)
+    fig, ax = plt.subplots(figsize=(13, 7), dpi=200)
+    if(title != ''):
+        ax.set_title(title)
     im = ax.imshow(dataframe, interpolation='nearest', aspect=aspect_ratio,
         cmap = mpl.colormaps['BuPu'])
     if colorbar:
@@ -1098,5 +1136,56 @@ def plot_random(voice, split='train'):
     
     random_song = pick_random_song(split)
     plot(ray.get(read_voice.remote(random_song, voice)))
+
+############################################################
+
+def playground(model):
+    rand_song =pick_random_song(split='test')
+    mix, s, a, t, b = read_all_voice_splits(rand_song)
+
+    s_pred, a_pred, t_pred, b_pred = model.predict(mix)
+
+    mix = np.moveaxis(mix, 0, 1).reshape(360, -1)
+    s = np.moveaxis(s, 0, 1).reshape(360, -1)
+    a = np.moveaxis(a, 0, 1).reshape(360, -1)
+    t = np.moveaxis(t, 0, 1).reshape(360, -1)
+    b = np.moveaxis(b, 0, 1).reshape(360, -1)
+
+    s_pred_postproc = prediction_postproc(s_pred).astype(np.float32)
+    a_pred_postproc = prediction_postproc(a_pred).astype(np.float32)
+    t_pred_postproc = prediction_postproc(t_pred).astype(np.float32)
+    b_pred_postproc = prediction_postproc(b_pred).astype(np.float32)
+    mix_pred_postproc = s_pred_postproc + a_pred_postproc + t_pred_postproc + b_pred_postproc
+    mix_pred_postproc = vectorized_downsample_limit(mix_pred_postproc)
+
+    s_fscore = f_score(s, s_pred_postproc)
+    a_fscore = f_score(a, a_pred_postproc)
+    t_fscore = f_score(t, t_pred_postproc)
+    b_fscore = f_score(b, b_pred_postproc)
+
+    print("F-Scores:")
+    print(f"Soprano: {s_fscore}")
+    print(f"Alto: {a_fscore}")
+    print(f"Tenor: {t_fscore}")
+    print(f"Bass: {b_fscore}")
+    print()
+
+    plot(mix, title='Mix - Ground Truth')
+    plot(mix_pred_postproc, title='Mix - Rebuilt from predictions from ' + model.name)
+
+    plot(s, title='Soprano - Ground Truth')
+    plot(s_pred_postproc, title='Soprano - Prediction from ' + model.name)
+
+    plot(a, title='Alto - Ground Truth')
+    plot(a_pred_postproc, title='Alto - Prediction from ' + model.name)
+
+    plot(t, title='Tenor - Ground Truth')
+    plot(t_pred_postproc, title='Tenor - Prediction from ' + model.name)
+
+    plot(b, title='Bass - Ground Truth')
+    plot(b_pred_postproc, title='Bass - Prediction from ' + model.name)
+
+    song_to_midi(s, a, t, b, './MIDI/original.mid')
+    song_to_midi(s_pred_postproc, a_pred_postproc, t_pred_postproc, b_pred_postproc, './MIDI/predicted.mid')
 
 ############################################################
