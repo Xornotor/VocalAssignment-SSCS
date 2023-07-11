@@ -40,7 +40,7 @@ RESIZING_FILTER = 'bilinear'
 
 dataset_dir = "Datasets/"
 checkpoint_dir = "Checkpoints/voas_cnn.keras"
-log_dir = "Logs/voas_cnn/"
+log_dir = "Logs/"
 midi_dir = "MIDI/"
 zipname = dataset_dir + "SSCS_HDF5.zip"
 sscs_dir = dataset_dir + "SSCS_HDF5/"
@@ -48,107 +48,6 @@ sscs_dir = dataset_dir + "SSCS_HDF5/"
 songs_dir = sscs_dir + "sscs/"
 splitname = sscs_dir + "sscs_splits.json"
 
-############################################################
-
-############################################################
-
-def mask_voas_cnn_model(l_rate = LEARNING_RATE):
-    x_in = Input(shape=(360, SPLIT_SIZE, 1))
-
-    x = Resizing(90, int(SPLIT_SIZE/2), RESIZING_FILTER)(x_in)
-    
-    x = BatchNormalization()(x)
-
-    x = Conv2D(filters=32, kernel_size=(3, 3), padding="same",
-        activation="relu", name="conv1")(x)
-
-    x = BatchNormalization()(x)
-
-    x = Conv2D(filters=32, kernel_size=(3, 3), padding="same",
-        activation="relu", name="conv2")(x)
-
-    x = BatchNormalization()(x)
-
-    x = Conv2D(filters=16, kernel_size=(70, 3), padding="same",
-        activation="relu", name="conv_harm_1")(x)
-
-    x = BatchNormalization()(x)
-
-    x = Conv2D(filters=16, kernel_size=(70, 3), padding="same",
-        activation="relu", name="conv_harm_2")(x)
-    
-    x = BatchNormalization()(x)
-
-    ## "masking" original input with trained data
-
-    x = Resizing(360, SPLIT_SIZE, RESIZING_FILTER)(x)
-
-    x = Multiply()([x, x_in])
-
-    ## start four branches now
-
-    ## branch 1
-    x1a = Conv2D(filters=16, kernel_size=(3, 3), padding="same",
-        activation="relu", name="conv1a")(x)
-
-    x1a = BatchNormalization()(x1a)
-
-    x1b = Conv2D(filters=16, kernel_size=(3, 3), padding="same",
-        activation="relu", name="conv1b")(x1a)
-
-    ## branch 2
-    x2a = Conv2D(filters=16, kernel_size=(3, 3), padding="same",
-        activation="relu", name="conv2a")(x)
-
-    x2a = BatchNormalization()(x2a)
-
-    x2b = Conv2D(filters=16, kernel_size=(3, 3), padding="same",
-        activation="relu", name="conv2b")(x2a)
-
-    ## branch 3
-
-    x3a = Conv2D(filters=16, kernel_size=(3, 3), padding="same",
-        activation="relu", name="conv3a")(x)
-
-    x3a = BatchNormalization()(x3a)
-
-    x3b = Conv2D(filters=16, kernel_size=(3, 3), padding="same",
-        activation="relu", name="conv3b")(x3a)
-
-    x4a = Conv2D(filters=16, kernel_size=(3, 3), padding="same",
-        activation="relu", name="conv4a")(x)
-
-    x4a = BatchNormalization()(x4a)
-
-    x4b = Conv2D(filters=16, kernel_size=(3, 3), padding="same",
-        activation="relu", name="conv4b"
-    )(x4a)
-
-
-    y1 = Conv2D(filters=1, kernel_size=1, name='conv_soprano',
-                padding='same', activation='sigmoid')(x1b)
-    y1 = tf.squeeze(y1, axis=-1, name='sop')
-
-    y2 = Conv2D(filters=1, kernel_size=1, name='conv_alto',
-                padding='same', activation='sigmoid')(x2b)
-    y2 = tf.squeeze(y2, axis=-1, name='alt')
-
-    y3 = Conv2D(filters=1, kernel_size=1, name='conv_tenor',
-                padding='same', activation='sigmoid')(x3b)
-    y3 = tf.squeeze(y3, axis=-1, name='ten')
-
-    y4 = Conv2D(filters=1, kernel_size=1, name='conv_bass',
-                padding='same', activation='sigmoid')(x4b)
-    y4 = tf.squeeze(y4, axis=-1, name='bas')
-
-    out = [y1, y2, y3, y4]
-
-    model = Model(inputs=x_in, outputs=out, name='voasCNN')
-
-    model.compile(optimizer=Adam(learning_rate=l_rate),
-                 loss=BinaryCrossentropy(reduction=Reduction.SUM_OVER_BATCH_SIZE))
-
-    return model
 
 ############################################################
 
@@ -235,7 +134,7 @@ def voas_cnn_model(l_rate = LEARNING_RATE):
 
     out = [y1, y2, y3, y4]
 
-    model = Model(inputs=x_in, outputs=out, name='voasCNN')
+    model = Model(inputs=x_in, outputs=out, name='VoasCNN')
 
     model.compile(optimizer=Adam(learning_rate=l_rate),
                  loss=BinaryCrossentropy(reduction=Reduction.SUM_OVER_BATCH_SIZE))
@@ -333,7 +232,216 @@ def downsample_voas_cnn_model(l_rate = LEARNING_RATE):
 
     out = [y1, y2, y3, y4]
 
-    model = Model(inputs=x_in, outputs=out, name='voasCNN')
+    model = Model(inputs=x_in, outputs=out, name='DownsampleVoasCNN')
+
+    model.compile(optimizer=Adam(learning_rate=l_rate),
+                 loss=BinaryCrossentropy(reduction=Reduction.SUM_OVER_BATCH_SIZE))
+
+    return model
+
+############################################################
+
+def mask_voas_cnn_model(l_rate = LEARNING_RATE):
+    x_in = Input(shape=(360, SPLIT_SIZE, 1))
+
+    x = Resizing(90, int(SPLIT_SIZE/2), RESIZING_FILTER,
+                 name="downscale")(x_in)
+    
+    x = BatchNormalization()(x)
+
+    x = Conv2D(filters=32, kernel_size=(3, 3), padding="same",
+        activation="relu", name="conv1")(x)
+
+    x = BatchNormalization()(x)
+
+    x = Conv2D(filters=32, kernel_size=(3, 3), padding="same",
+        activation="relu", name="conv2")(x)
+
+    x = BatchNormalization()(x)
+
+    x = Conv2D(filters=16, kernel_size=(70, 3), padding="same",
+        activation="relu", name="conv_harm_1")(x)
+
+    x = BatchNormalization()(x)
+
+    x = Conv2D(filters=16, kernel_size=(70, 3), padding="same",
+        activation="relu", name="conv_harm_2")(x)
+    
+    x = BatchNormalization()(x)
+
+    ## "masking" original input with trained data
+
+    x = Resizing(360, SPLIT_SIZE, RESIZING_FILTER,
+                 name="upscale")(x)
+
+    x = Multiply(name="multiply_mask")([x, x_in])
+
+    ## start four branches now
+
+    ## branch 1
+    x1a = Conv2D(filters=16, kernel_size=(3, 3), padding="same",
+        activation="relu", name="conv1a")(x)
+
+    x1a = BatchNormalization()(x1a)
+
+    x1b = Conv2D(filters=16, kernel_size=(3, 3), padding="same",
+        activation="relu", name="conv1b")(x1a)
+
+    ## branch 2
+    x2a = Conv2D(filters=16, kernel_size=(3, 3), padding="same",
+        activation="relu", name="conv2a")(x)
+
+    x2a = BatchNormalization()(x2a)
+
+    x2b = Conv2D(filters=16, kernel_size=(3, 3), padding="same",
+        activation="relu", name="conv2b")(x2a)
+
+    ## branch 3
+
+    x3a = Conv2D(filters=16, kernel_size=(3, 3), padding="same",
+        activation="relu", name="conv3a")(x)
+
+    x3a = BatchNormalization()(x3a)
+
+    x3b = Conv2D(filters=16, kernel_size=(3, 3), padding="same",
+        activation="relu", name="conv3b")(x3a)
+
+    x4a = Conv2D(filters=16, kernel_size=(3, 3), padding="same",
+        activation="relu", name="conv4a")(x)
+
+    x4a = BatchNormalization()(x4a)
+
+    x4b = Conv2D(filters=16, kernel_size=(3, 3), padding="same",
+        activation="relu", name="conv4b"
+    )(x4a)
+
+
+    y1 = Conv2D(filters=1, kernel_size=1, name='conv_soprano',
+                padding='same', activation='sigmoid')(x1b)
+    y1 = tf.squeeze(y1, axis=-1, name='sop')
+
+    y2 = Conv2D(filters=1, kernel_size=1, name='conv_alto',
+                padding='same', activation='sigmoid')(x2b)
+    y2 = tf.squeeze(y2, axis=-1, name='alt')
+
+    y3 = Conv2D(filters=1, kernel_size=1, name='conv_tenor',
+                padding='same', activation='sigmoid')(x3b)
+    y3 = tf.squeeze(y3, axis=-1, name='ten')
+
+    y4 = Conv2D(filters=1, kernel_size=1, name='conv_bass',
+                padding='same', activation='sigmoid')(x4b)
+    y4 = tf.squeeze(y4, axis=-1, name='bas')
+
+    out = [y1, y2, y3, y4]
+
+    model = Model(inputs=x_in, outputs=out, name='MaskVoasCNN')
+
+    model.compile(optimizer=Adam(learning_rate=l_rate),
+                 loss=BinaryCrossentropy(reduction=Reduction.SUM_OVER_BATCH_SIZE))
+
+    return model
+
+############################################################
+
+def mask_voas_cnn_v2_model(l_rate = LEARNING_RATE):
+    x_in = Input(shape=(360, SPLIT_SIZE, 1))
+
+    x = Resizing(90, int(SPLIT_SIZE/2), RESIZING_FILTER,
+                 name="downscale")(x_in)
+    
+    x = BatchNormalization()(x)
+
+    x = Conv2D(filters=32, kernel_size=(3, 3), padding="same",
+        activation="relu", name="conv1")(x)
+
+    x = BatchNormalization()(x)
+
+    x = Conv2D(filters=32, kernel_size=(3, 3), padding="same",
+        activation="relu", name="conv2")(x)
+
+    x = BatchNormalization()(x)
+
+    x = Conv2D(filters=16, kernel_size=(48, 3), padding="same",
+        activation="relu", name="conv_harm_1")(x)
+
+    x = BatchNormalization()(x)
+
+    x = Conv2D(filters=16, kernel_size=(48, 3), padding="same",
+        activation="relu", name="conv_harm_2")(x)
+    
+    x = BatchNormalization()(x)
+
+    x = Conv2D(filters=16, kernel_size=1, padding="same",
+        activation="sigmoid", name="conv_sigmoid_before_mask")(x)
+
+    ## "masking" original input with trained data
+
+    x = Resizing(360, SPLIT_SIZE, RESIZING_FILTER,
+                 name="upscale")(x)
+
+    x = Multiply(name="multiply_mask")([x, x_in])
+
+    x = BatchNormalization()(x)
+
+    ## start four branches now
+
+    ## branch 1
+    x1a = Conv2D(filters=16, kernel_size=(3, 3), padding="same",
+        activation="relu", name="conv1a")(x)
+
+    x1a = BatchNormalization()(x1a)
+
+    x1b = Conv2D(filters=16, kernel_size=(3, 3), padding="same",
+        activation="relu", name="conv1b")(x1a)
+
+    ## branch 2
+    x2a = Conv2D(filters=16, kernel_size=(3, 3), padding="same",
+        activation="relu", name="conv2a")(x)
+
+    x2a = BatchNormalization()(x2a)
+
+    x2b = Conv2D(filters=16, kernel_size=(3, 3), padding="same",
+        activation="relu", name="conv2b")(x2a)
+
+    ## branch 3
+
+    x3a = Conv2D(filters=16, kernel_size=(3, 3), padding="same",
+        activation="relu", name="conv3a")(x)
+
+    x3a = BatchNormalization()(x3a)
+
+    x3b = Conv2D(filters=16, kernel_size=(3, 3), padding="same",
+        activation="relu", name="conv3b")(x3a)
+
+    x4a = Conv2D(filters=16, kernel_size=(3, 3), padding="same",
+        activation="relu", name="conv4a")(x)
+
+    x4a = BatchNormalization()(x4a)
+
+    x4b = Conv2D(filters=16, kernel_size=(3, 3), padding="same",
+        activation="relu", name="conv4b"
+    )(x4a)
+
+
+    y1 = Conv2D(filters=1, kernel_size=1, name='conv_soprano',
+                padding='same', activation='sigmoid')(x1b)
+    y1 = tf.squeeze(y1, axis=-1, name='sop')
+
+    y2 = Conv2D(filters=1, kernel_size=1, name='conv_alto',
+                padding='same', activation='sigmoid')(x2b)
+    y2 = tf.squeeze(y2, axis=-1, name='alt')
+
+    y3 = Conv2D(filters=1, kernel_size=1, name='conv_tenor',
+                padding='same', activation='sigmoid')(x3b)
+    y3 = tf.squeeze(y3, axis=-1, name='ten')
+
+    y4 = Conv2D(filters=1, kernel_size=1, name='conv_bass',
+                padding='same', activation='sigmoid')(x4b)
+    y4 = tf.squeeze(y4, axis=-1, name='bas')
+
+    out = [y1, y2, y3, y4]
+
+    model = Model(inputs=x_in, outputs=out, name='MaskVoasCNNv2')
 
     model.compile(optimizer=Adam(learning_rate=l_rate),
                  loss=BinaryCrossentropy(reduction=Reduction.SUM_OVER_BATCH_SIZE))
@@ -618,12 +726,14 @@ def read_multiple_songs_splits(split_size=SPLIT_SIZE, first=0, amount=5, split='
 
 ############################################################
 
-def plot(dataframe):
+def plot(dataframe, colorbar=False):
 
     aspect_ratio = (3/8)*dataframe.shape[1]/dataframe.shape[0]
     fig, ax = plt.subplots(figsize=(13, 7))
     im = ax.imshow(dataframe, interpolation='nearest', aspect=aspect_ratio,
         cmap = mpl.colormaps['BuPu'])
+    if colorbar:
+        fig.colorbar(im, shrink=0.5)
     ax.invert_yaxis()
     plt.show()
 
@@ -847,14 +957,14 @@ def load_weights(model, ckpt_dir=checkpoint_dir):
 ############################################################
 
 def train(model, ds_train, ds_val, epochs=EPOCHS,
-          save_model=False, ckpt_dir=checkpoint_dir, log_dir=log_dir):
+          save_model=False, ckpt_dir=checkpoint_dir, log_folder='voas_cnn'):
 
     save_cb = tf.keras.callbacks.ModelCheckpoint(   filepath=ckpt_dir,
                                                     save_weights_only=True,
                                                     verbose=1
                                                 )
     
-    logdir = log_dir + datetime.datetime.now().strftime("%Y%m%d-%H%M%S")
+    logdir = log_dir + log_folder + "/" + datetime.datetime.now().strftime("%Y%m%d-%H%M%S")
     tensorboard_cb = tf.keras.callbacks.TensorBoard(log_dir=logdir, histogram_freq=1)
 
     if(save_model):
