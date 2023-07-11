@@ -1063,7 +1063,7 @@ def boxplot(f_score_array, title=''):
 
 ############################################################
 
-def joint_f_histograms(f_scores):
+def joint_f_histograms(f_scores, title=''):
     s_counts, s_bins = np.histogram(f_scores[0], bins=100)
     a_counts, a_bins = np.histogram(f_scores[1], bins=100)
     t_counts, t_bins = np.histogram(f_scores[2], bins=100)
@@ -1075,17 +1075,22 @@ def joint_f_histograms(f_scores):
     plt.stairs(t_counts, t_bins, label='tenor')
     plt.stairs(b_counts, b_bins, label='bass')
     plt.legend()
+    if(title != ''):
+        plt.title(title)
     plt.show()
 
 ############################################################
 
-def voice_f_histograms(f_scores):
+def voice_f_histograms(f_scores, title=''):
     s_counts, s_bins = np.histogram(f_scores[0], bins=100)
     a_counts, a_bins = np.histogram(f_scores[1], bins=100)
     t_counts, t_bins = np.histogram(f_scores[2], bins=100)
     b_counts, b_bins = np.histogram(f_scores[3], bins=100)
 
     fig, axs = plt.subplots(2, 2, figsize=(15, 7), dpi=200)
+    fig.tight_layout(pad=2.0)
+    if(title != ''):
+        fig.suptitle(title)
     axs[0][0].yaxis.grid(True)
     axs[0][0].xaxis.grid(False)
     axs[0][0].stairs(s_counts, s_bins, fill=True)
