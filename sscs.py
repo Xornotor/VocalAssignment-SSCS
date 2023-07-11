@@ -29,7 +29,7 @@ font_dirs = './Assets/Fonts/'
 font_files = fm.findSystemFonts(fontpaths=font_dirs)
 for font in font_files: fm.fontManager.addfont(font)
 
-plt.rcParams['font.family'] = "Hanken Grotesk"
+plt.rcParams['font.family'] = "SF UI Text"
 plt.rcParams['font.size'] = 14
 
 ray.init(ignore_reinit_error=True)
@@ -1046,16 +1046,18 @@ def f_score_test_precompute(model, save_dir):
 
 ############################################################
 
-def boxplot(f_score_array):    
-    fig, ax = plt.subplots(figsize=(4, 5), dpi=200)
+def boxplot(f_score_array, title=''):    
+    fig, ax = plt.subplots(figsize=(4, 6), dpi=200)
     ax.boxplot(f_score_array.T)
     ax.set_ylim([0, 1])
     ax.yaxis.grid(True)
     ax.xaxis.grid(False)
-    ax.set_xticklabels(['Soprano', 'Alto', 'Tenor', 'Bass'])
-
-    print(np.median(f_score_array[0]), np.median(f_score_array[1]),
-          np.median(f_score_array[2]), np.median(f_score_array[3]))
+    ax.set_xticklabels([f"Soprano\n{np.median(f_score_array[0]):.2f}",
+                        f"Alto\n{np.median(f_score_array[1]):.2f}",
+                        f"Tenor\n{np.median(f_score_array[2]):.2f}",
+                        f"Bass\n{np.median(f_score_array[3]):.2f}"])
+    if(title != ''):
+        ax.set_title(title)
 
     plt.show()
 
