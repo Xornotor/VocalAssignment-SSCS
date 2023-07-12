@@ -1115,28 +1115,18 @@ def f_score_test_precompute(model, save_dir):
     #songs = sscs.pick_songlist(amount=300, split='test')
 
     def multivoice_f_score(song):
-        mix, s, a, t, b = read_all_voice_splits(song)
-        s_pred, a_pred, t_pred, b_pred = model.predict(mix)
+        voice_splits = read_all_voice_splits(song)
+        voice_pred = model.predict(voice_splits[0])
 
-        mix = np.moveaxis(mix, 0, 1).reshape(360, -1)
-        s = np.moveaxis(s, 0, 1).reshape(360, -1)
-        a = np.moveaxis(a, 0, 1).reshape(360, -1)
-        t = np.moveaxis(t, 0, 1).reshape(360, -1)
-        b = np.moveaxis(b, 0, 1).reshape(360, -1)
+        splits_reshaped = [np.moveaxis(split, 0, 1).reshape(360, -1) for split in voice_splits]
 
-        s_pred_postproc = prediction_postproc(s_pred).astype(np.float32)
-        a_pred_postproc = prediction_postproc(a_pred).astype(np.float32)
-        t_pred_postproc = prediction_postproc(t_pred).astype(np.float32)
-        b_pred_postproc = prediction_postproc(b_pred).astype(np.float32)
-        mix_pred_postproc = s_pred_postproc + a_pred_postproc + t_pred_postproc + b_pred_postproc
+        pred_postproc = [prediction_postproc(pred).astype(np.float32) for pred in voice_pred]
+        mix_pred_postproc = pred_postproc[0] + pred_postproc[1] + pred_postproc[2] + pred_postproc[3]
         mix_pred_postproc = vectorized_downsample_limit(mix_pred_postproc)
 
-        s_fscore = f_score(s, s_pred_postproc)
-        a_fscore = f_score(a, a_pred_postproc)
-        t_fscore = f_score(t, t_pred_postproc)
-        b_fscore = f_score(b, b_pred_postproc)
+        f_scores = list(map(f_score, splits_reshaped[1:], pred_postproc))
 
-        return [s_fscore, a_fscore, t_fscore, b_fscore]
+        return f_scores
 
     f_scores = np.array(list(map(multivoice_f_score, songs)))
     f_scores = f_scores.T
@@ -1174,6 +1164,7 @@ def joint_f_histograms(f_scores, title=''):
     plt.stairs(a_counts, a_bins, label='alto')
     plt.stairs(t_counts, t_bins, label='tenor')
     plt.stairs(b_counts, b_bins, label='bass')
+    plt.ylim(0, 120)
     plt.legend()
     if(title != ''):
         plt.title(title)
