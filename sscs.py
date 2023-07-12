@@ -1230,6 +1230,27 @@ def plot(dataframe, colorbar=False, title=''):
 
 ############################################################
 
+def plot_activation_maps(actv_maps, colorbar=False, title=''):
+
+    aspect_ratio = (4/8)*actv_maps.shape[1]/actv_maps.shape[0]
+    fig, axs = plt.subplots(4, 4, figsize=(13, 7), dpi=300)
+    if(title != ''):
+        fig.suptitle(title)
+    for i in range(4):
+        for j in range(4):
+            im = axs[i][j].imshow(actv_maps[:, :, 4*i + j], interpolation='nearest',
+                            aspect=aspect_ratio, cmap = mpl.colormaps['BuPu'])
+            axs[i][j].invert_yaxis()
+            axs[i][j].xaxis.set_tick_params(labelbottom=False)
+            axs[i][j].yaxis.set_tick_params(labelleft=False)
+            axs[i][j].set_xticks([])
+            axs[i][j].set_yticks([])
+    if colorbar:
+        fig.colorbar(im, ax=axs[:, :], shrink=0.6, location='right')
+    plt.show()
+
+############################################################
+
 def plot_random(voice, split='train'):
     
     random_song = pick_random_song(split)
