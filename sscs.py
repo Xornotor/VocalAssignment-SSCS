@@ -1178,8 +1178,9 @@ def voice_f_histograms(f_scores, title=''):
     t_counts, t_bins = np.histogram(f_scores[2], bins=100)
     b_counts, b_bins = np.histogram(f_scores[3], bins=100)
 
-    fig, axs = plt.subplots(2, 2, figsize=(15, 7), dpi=200)
-    fig.tight_layout(pad=2.0)
+    fig, axs = plt.subplots(2, 2, figsize=(15, 7), dpi=200, constrained_layout=True)
+    fig.subplots_adjust(top=0.85)
+    #fig.tight_layout(pad=2.0)
     if(title != ''):
         fig.suptitle(title)
     axs[0][0].yaxis.grid(True)
@@ -1188,7 +1189,6 @@ def voice_f_histograms(f_scores, title=''):
     axs[0][0].set_title("Soprano - Histograma")
     axs[0][0].set_xlim([0, 1])
     axs[0][0].set_ylim([0, 120])
-    
 
     axs[0][1].yaxis.grid(True)
     axs[0][1].xaxis.grid(False)
@@ -1232,8 +1232,8 @@ def plot(dataframe, colorbar=False, title=''):
 
 def plot_activation_maps(actv_maps, colorbar=False, title=''):
 
-    aspect_ratio = (4/8)*actv_maps.shape[1]/actv_maps.shape[0]
-    fig, axs = plt.subplots(4, 4, figsize=(13, 7), dpi=300)
+    aspect_ratio = (3.75/8)*actv_maps.shape[1]/actv_maps.shape[0]
+    fig, axs = plt.subplots(4, 4, figsize=(13, 6), dpi=500, constrained_layout=True)
     if(title != ''):
         fig.suptitle(title)
     for i in range(4):
@@ -1246,7 +1246,7 @@ def plot_activation_maps(actv_maps, colorbar=False, title=''):
             axs[i][j].set_xticks([])
             axs[i][j].set_yticks([])
     if colorbar:
-        fig.colorbar(im, ax=axs[:, :], shrink=0.6, location='right')
+        fig.colorbar(im, ax=axs[:, :], shrink=0.7, location='right')
     plt.show()
 
 ############################################################
