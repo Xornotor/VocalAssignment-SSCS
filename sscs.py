@@ -1072,12 +1072,7 @@ def prediction_postproc(input_array):
     reshaped = np.moveaxis(input_array, 0, 1).reshape(360, -1)
     argmax = np.argmax(reshaped, axis=0)
     threshold = np.zeros((360, argmax.shape[0]))
-
-    def threshold_set(idx):
-        threshold[argmax[idx], idx] = 1.0
-        return True
-    
-    thr_set = [threshold_set(idx) for idx in range(argmax.shape[0])]
+    threshold[argmax, np.arange(argmax.size)] = 1
     filtered = np.array(gaussian_filter1d(threshold, 1, axis=0, mode='wrap'))
     postproc = (filtered - np.min(filtered))/(np.max(filtered)-np.min(filtered))
     return postproc
