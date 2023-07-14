@@ -1131,6 +1131,13 @@ def f_score_test_precompute(model, save_dir):
 
 ############################################################
 
+def mean_and_deviation(f_score_array):
+    mean = np.mean(f_score_array, axis=1)
+    std = np.std(f_score_array, axis=1)
+    print(mean, std)
+
+############################################################
+
 def boxplot(f_score_array, title=''):    
     fig, ax = plt.subplots(figsize=(4, 6), dpi=200)
     ax.boxplot(f_score_array.T)
