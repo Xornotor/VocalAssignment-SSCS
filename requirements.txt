@@ -1,6 +1,7 @@
 chardet
 hdf5plugin
 h5py
+tables
 mido
 requests
 psutil
