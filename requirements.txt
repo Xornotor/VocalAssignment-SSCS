@@ -2,8 +2,6 @@ chardet
 hdf5plugin
 h5py
 mido
-json
-zipfile
 requests
 psutil
 numpy
@@ -14,4 +12,7 @@ jupyterlab
 librosa
 mir_eval
 ray
+tensorflow
+tensorboard
+gradio
 -e .
