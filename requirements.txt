@@ -10,6 +10,7 @@ pandas
 scipy
 matplotlib
 jupyterlab
+ipywidgets
 librosa
 mir_eval
 ray
