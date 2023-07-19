@@ -1068,14 +1068,17 @@ def train(model, ds_train, ds_val, epochs=EPOCHS,
 
 ############################################################
 
-def prediction_postproc(input_array):
-    reshaped = np.moveaxis(input_array, 0, 1).reshape(360, -1)
-    argmax = np.argmax(reshaped, axis=0)
-    threshold = np.zeros((360, argmax.shape[0]))
-    threshold[argmax, np.arange(argmax.size)] = 1
-    filtered = np.array(gaussian_filter1d(threshold, 1, axis=0, mode='wrap'))
-    postproc = (filtered - np.min(filtered))/(np.max(filtered)-np.min(filtered))
-    return postproc
+def prediction_postproc(input_array, argmax_and_threshold=True, gaussian_blur=True):
+    prediction = np.moveaxis(input_array, 0, 1).reshape(360, -1)
+    if(argmax_and_threshold):
+        prediction = np.argmax(prediction, axis=0)
+        threshold = np.zeros((360, prediction.shape[0]))
+        threshold[prediction, np.arange(prediction.size)] = 1
+        prediction = threshold
+    if(gaussian_blur):
+        prediction = np.array(gaussian_filter1d(prediction, 1, axis=0, mode='wrap'))
+        prediction = (prediction - np.min(prediction))/(np.max(prediction)-np.min(prediction))
+    return prediction
 
 ############################################################
 
