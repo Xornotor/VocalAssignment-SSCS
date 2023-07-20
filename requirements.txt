@@ -17,6 +17,7 @@ ray
 tensorflow
 tensorboard
 gradio
+pyarrow==12.0.1
 typing-extensions==4.5.0
 pydantic<2
 pydantic-core<2
