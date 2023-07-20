@@ -881,11 +881,11 @@ def downsample_bins(voice):
     voice_3 = np.array(voice.T[3::5]).T
     voice_4 = np.array(voice.T[4::5]).T
 
-    voice_0 = voice_0.T[1:71].T
-    voice_1 = voice_1.T[1:71].T
-    voice_2 = voice_2.T[1:71].T
-    voice_3 = voice_3.T[0:70].T
-    voice_4 = voice_4.T[0:70].T
+    voice_0 = voice_0.T[1:70].T
+    voice_1 = voice_1.T[1:70].T
+    voice_2 = voice_2.T[0:69].T
+    voice_3 = voice_3.T[0:69].T
+    voice_4 = voice_4.T[0:69].T
 
     voice_sums = voice_0 + voice_1 + voice_2 + voice_3 + voice_4
 
@@ -897,8 +897,8 @@ def downsample_bins(voice):
 
 ############################################################
 
-def create_midi(pr, write_path='./MIDI/midi_track.mid', ticks_per_beat=52,
-                tempo=77, save_to_file=True, program=53, channel=0):
+def create_midi(pr, write_path='./MIDI/midi_track.mid', ticks_per_beat=58,
+                tempo=90, save_to_file=True, program=53, channel=0):
     
     if(not os.path.exists(midi_dir)):
         os.mkdir(midi_dir)
@@ -918,9 +918,9 @@ def create_midi(pr, write_path='./MIDI/midi_track.mid', ticks_per_beat=52,
                 for n in range(0, N):
                     if mask[n]:
                         if(N <= 72):
-                            pitch = 22 + n
+                            pitch = 25 + n
                         else:
-                            pitch = 21 + round(n/5)
+                            pitch = 24 + round(n/5)
                         if int(pr_t[n] * 127) >= 50:
                             velocity = 127
                         else:
