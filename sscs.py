@@ -883,15 +883,18 @@ def downsample_bins(voice):
 
     voice_0 = voice_0.T[1:70].T
     voice_1 = voice_1.T[1:70].T
-    voice_2 = voice_2.T[0:69].T
+    voice_2 = voice_2.T[1:70].T
     voice_3 = voice_3.T[0:69].T
     voice_4 = voice_4.T[0:69].T
 
     voice_sums = voice_0 + voice_1 + voice_2 + voice_3 + voice_4
+    voice_argmax = np.argmax(voice_sums, axis=1)
+    threshold = np.zeros(voice_sums.shape)
+    threshold[np.arange(voice_argmax.size), voice_argmax] = 1
+    threshold[:, 0] = 0
+    voice_sums = threshold
 
-    
-
-    voice_sums = vectorized_downsample_threshold(voice_sums)
+    #voice_sums = vectorized_downsample_threshold(voice_sums)
 
     return voice_sums
 
@@ -1091,19 +1094,25 @@ vec_bin_to_freq = np.vectorize(bin_to_freq)
 
 ############################################################
 
-def f_score(y_true, y_pred):
-    timescale = np.arange(0, 0.011 * (y_true.shape[1]), 0.011)[:y_true.shape[1]]
-    y_true_argmax = np.argmax(y_true, axis=0)
+def f_score(y_true, y_pred, true_bin=True):
+    timescale = np.arange(0, 0.011 * (y_pred.shape[1]), 0.011)[:y_pred.shape[1]]
+    
+    if(true_bin):
+        y_true_argmax = np.argmax(y_true, axis=0)
+        y_true_freqs = vec_bin_to_freq(y_true_argmax).reshape(-1, 1)
+    else:
+        y_true_freqs = y_true.reshape(-1, 1)
+
     y_pred_argmax = np.argmax(y_pred, axis=0)
-    y_true_freqs = vec_bin_to_freq(y_true_argmax).reshape(-1, 1)
     y_pred_freqs = vec_bin_to_freq(y_pred_argmax).reshape(-1, 1)
-    n_ref = mir_eval.multipitch.compute_num_freqs(y_true_argmax)
-    n_est = mir_eval.multipitch.compute_num_freqs(y_pred_argmax)
+    n_ref = mir_eval.multipitch.compute_num_freqs(np.squeeze(y_true_freqs))
+    n_est = mir_eval.multipitch.compute_num_freqs(np.squeeze(y_pred_freqs))
     true_pos = mir_eval.multipitch.compute_num_true_positives(y_true_freqs, y_pred_freqs)
     #mir_eval.multipitch.validate(timescale, y_true_freqs, timescale, y_pred_freqs)
     #metrics = mir_eval.multipitch.metrics(timescale, y_true_freqs, timescale, y_pred_freqs)
     metrics = mir_eval.multipitch.compute_accuracy(true_pos, n_ref, n_est)
     f_measure = 2 * (metrics[0] * metrics[1]) / (metrics[0] + metrics[1] + K.epsilon())
+
     return f_measure
 
 ############################################################
