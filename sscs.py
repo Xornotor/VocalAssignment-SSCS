@@ -1095,7 +1095,7 @@ vec_bin_to_freq = np.vectorize(bin_to_freq)
 ############################################################
 
 def f_score(y_true, y_pred, true_bin=True):
-    timescale = np.arange(0, 0.011 * (y_pred.shape[1]), 0.011)[:y_pred.shape[1]]
+    timescale = np.arange(0, 0.011609977 * (y_pred.shape[1]), 0.011609977)[:y_pred.shape[1]]
     
     if(true_bin):
         y_true_argmax = np.argmax(y_true, axis=0)
@@ -1112,6 +1112,29 @@ def f_score(y_true, y_pred, true_bin=True):
     #metrics = mir_eval.multipitch.metrics(timescale, y_true_freqs, timescale, y_pred_freqs)
     metrics = mir_eval.multipitch.compute_accuracy(true_pos, n_ref, n_est)
     f_measure = 2 * (metrics[0] * metrics[1]) / (metrics[0] + metrics[1] + K.epsilon())
+
+    return f_measure
+
+############################################################
+
+def f_score_time_freq(y_true, y_pred, true_timescale, true_bin=True):
+    timescale = np.arange(0, 0.011609977 * (y_pred.shape[1]), 0.011609977)[:y_pred.shape[1]]
+    
+    if(true_bin):
+        y_true_argmax = np.argmax(y_true, axis=0)
+        y_true_freqs_raw = vec_bin_to_freq(y_true_argmax).reshape(-1)
+    else:
+        y_true_freqs_raw = y_true.reshape(-1)
+
+    y_true_freqs_raw = [np.array([i]) for i in y_true_freqs_raw]
+    y_true_freqs = mir_eval.multipitch.resample_multipitch(true_timescale, y_true_freqs_raw, timescale)
+    y_true_freqs = np.array(y_true_freqs).reshape(-1, 1)
+
+    y_pred_argmax = np.argmax(y_pred, axis=0)
+    y_pred_freqs = vec_bin_to_freq(y_pred_argmax).reshape(-1, 1)
+    
+    metrics = mir_eval.multipitch.evaluate(timescale, y_true_freqs, timescale, y_pred_freqs)
+    f_measure = 2 * (metrics['Precision'] * metrics['Recall']) / (metrics['Precision'] + metrics['Recall'] + K.epsilon())
 
     return f_measure
 
