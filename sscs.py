@@ -1075,6 +1075,7 @@ def prediction_postproc(input_array, argmax_and_threshold=True, gaussian_blur=Tr
     prediction = np.moveaxis(input_array, 0, 1).reshape(360, -1)
     if(argmax_and_threshold):
         prediction = np.argmax(prediction, axis=0)
+        prediction = np.array([i if i <= 357 else 0 for i in prediction])
         threshold = np.zeros((360, prediction.shape[0]))
         threshold[prediction, np.arange(prediction.size)] = 1
         prediction = threshold
