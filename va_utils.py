@@ -558,29 +558,6 @@ def mask_voas_cnn_v2_model(l_rate = LEARNING_RATE):
 
 ############################################################
 
-def recall(y_true, y_pred):
-    true_positives = K.sum(K.round(K.clip(y_true * y_pred, 0, 1)))
-    possible_positives = K.sum(K.round(K.clip(y_true, 0, 1)))
-    recall_keras = true_positives / (possible_positives + K.epsilon())
-    return recall_keras
-
-############################################################
-
-def precision(y_true, y_pred):
-    true_positives = K.sum(K.round(K.clip(y_true * y_pred, 0, 1)))
-    predicted_positives = K.sum(K.round(K.clip(y_pred, 0, 1)))
-    precision_keras = true_positives / (predicted_positives + K.epsilon())
-    return precision_keras
-
-############################################################
-
-def f1(y_true, y_pred):
-    p = precision(y_true, y_pred)
-    r = recall(y_true, y_pred)
-    return 2 * ((p * r) / (p + r + K.epsilon()))
-
-############################################################
-
 class SSCS_Sequence(tf.keras.utils.Sequence):
     
     #-----------------------------------------------------------#
@@ -1095,57 +1072,79 @@ vec_bin_to_freq = np.vectorize(bin_to_freq)
 
 ############################################################
 
-def f_score(y_true, y_pred, true_bin=True):
-    timescale = np.arange(0, 0.011609977 * (y_pred.shape[1]), 0.011609977)[:y_pred.shape[1]]
-    
-    if(true_bin):
-        y_true_argmax = np.argmax(y_true, axis=0)
-        y_true_freqs = vec_bin_to_freq(y_true_argmax).reshape(-1, 1)
-    else:
-        y_true_freqs = y_true.reshape(-1, 1)
-
-    y_pred_argmax = np.argmax(y_pred, axis=0)
-    y_pred_freqs = vec_bin_to_freq(y_pred_argmax).reshape(-1, 1)
-    n_ref = mir_eval.multipitch.compute_num_freqs(np.squeeze(y_true_freqs))
-    n_est = mir_eval.multipitch.compute_num_freqs(np.squeeze(y_pred_freqs))
-    true_pos = mir_eval.multipitch.compute_num_true_positives(y_true_freqs, y_pred_freqs)
-    #mir_eval.multipitch.validate(timescale, y_true_freqs, timescale, y_pred_freqs)
-    #metrics = mir_eval.multipitch.metrics(timescale, y_true_freqs, timescale, y_pred_freqs)
-    metrics = mir_eval.multipitch.compute_accuracy(true_pos, n_ref, n_est)
-    f_measure = 2 * (metrics[0] * metrics[1]) / (metrics[0] + metrics[1] + K.epsilon())
-
-    return f_measure
+def __metrics_aux(ref_time, ref_freqs, est_time, est_freqs):
+    multipitch_metrics = mir_eval.multipitch.evaluate(ref_time, ref_freqs, est_time, est_freqs)
+    melody_metrics = mir_eval.melody.evaluate(ref_time, np.squeeze(ref_freqs), est_time, np.squeeze(est_freqs))
+    multipitch_metrics['F-Measure'] = 2 * (multipitch_metrics['Precision'] * multipitch_metrics['Recall']) / (multipitch_metrics['Precision'] + multipitch_metrics['Recall'] + K.epsilon())
+    metrics_dict = multipitch_metrics
+    metrics_dict.update(melody_metrics)
+    metrics_df = pd.DataFrame([metrics_dict]).astype('float64')
+    return metrics_df
 
 ############################################################
 
-def f_score_time_freq(y_true, y_pred, true_timescale, true_bin=True):
-    timescale = np.arange(0, 0.011609977 * (y_pred.shape[1]), 0.011609977)[:y_pred.shape[1]]
+def metrics(y_true_matrix, y_pred_matrix, true_bin=True, true_timescale=None):
+    timescale = np.arange(0, 0.011609977 * (y_pred_matrix[0].shape[1]), 0.011609977)[:y_pred_matrix[0].shape[1]]
     
     if(true_bin):
-        y_true_argmax = np.argmax(y_true, axis=0)
-        y_true_freqs_raw = vec_bin_to_freq(y_true_argmax).reshape(-1)
+        s_true_freqs_raw = vec_bin_to_freq(np.argmax(y_true_matrix[0], axis=0)).reshape(-1, 1)
+        a_true_freqs_raw = vec_bin_to_freq(np.argmax(y_true_matrix[1], axis=0)).reshape(-1, 1)
+        t_true_freqs_raw = vec_bin_to_freq(np.argmax(y_true_matrix[2], axis=0)).reshape(-1, 1)
+        b_true_freqs_raw = vec_bin_to_freq(np.argmax(y_true_matrix[3], axis=0)).reshape(-1, 1)
     else:
-        y_true_freqs_raw = y_true.reshape(-1)
+        s_true_freqs_raw = y_true_matrix[0].reshape(-1, 1)
+        a_true_freqs_raw = y_true_matrix[1].reshape(-1, 1)
+        t_true_freqs_raw = y_true_matrix[2].reshape(-1, 1)
+        b_true_freqs_raw = y_true_matrix[3].reshape(-1, 1)
 
-    y_true_freqs_raw = [np.array([i]) for i in y_true_freqs_raw]
-    y_true_freqs = mir_eval.multipitch.resample_multipitch(true_timescale, y_true_freqs_raw, timescale)
-    y_true_freqs = np.array(y_true_freqs).reshape(-1, 1)
-
-    y_pred_argmax = np.argmax(y_pred, axis=0)
-    y_pred_freqs = vec_bin_to_freq(y_pred_argmax).reshape(-1, 1)
+    if((true_timescale).all() == None):
+        s_true_freqs = s_true_freqs_raw
+        a_true_freqs = a_true_freqs_raw
+        t_true_freqs = t_true_freqs_raw
+        b_true_freqs = b_true_freqs_raw
+    else:
+        s_true_freqs_raw = [np.array([i]) for i in s_true_freqs_raw.reshape(-1)]
+        s_true_freqs = np.array(mir_eval.multipitch.resample_multipitch(true_timescale, s_true_freqs_raw, timescale)).reshape(-1, 1)
+        a_true_freqs_raw = [np.array([i]) for i in a_true_freqs_raw.reshape(-1)]
+        a_true_freqs = np.array(mir_eval.multipitch.resample_multipitch(true_timescale, a_true_freqs_raw, timescale)).reshape(-1, 1)
+        t_true_freqs_raw = [np.array([i]) for i in t_true_freqs_raw.reshape(-1)]
+        t_true_freqs = np.array(mir_eval.multipitch.resample_multipitch(true_timescale, t_true_freqs_raw, timescale)).reshape(-1, 1)
+        b_true_freqs_raw = [np.array([i]) for i in b_true_freqs_raw.reshape(-1)]
+        b_true_freqs = np.array(mir_eval.multipitch.resample_multipitch(true_timescale, b_true_freqs_raw, timescale)).reshape(-1, 1)
     
-    metrics = mir_eval.multipitch.evaluate(timescale, y_true_freqs, timescale, y_pred_freqs)
-    f_measure = 2 * (metrics['Precision'] * metrics['Recall']) / (metrics['Precision'] + metrics['Recall'] + K.epsilon())
+    y_true_freqs = np.concatenate((s_true_freqs, a_true_freqs, t_true_freqs, b_true_freqs), axis=1)
 
-    return f_measure
+    s_pred_freqs = vec_bin_to_freq(np.argmax(y_pred_matrix[0], axis=0)).reshape(-1, 1)
+    a_pred_freqs = vec_bin_to_freq(np.argmax(y_pred_matrix[1], axis=0)).reshape(-1, 1)
+    t_pred_freqs = vec_bin_to_freq(np.argmax(y_pred_matrix[2], axis=0)).reshape(-1, 1)
+    b_pred_freqs = vec_bin_to_freq(np.argmax(y_pred_matrix[3], axis=0)).reshape(-1, 1)
+
+    y_pred_freqs = np.concatenate((s_pred_freqs, a_pred_freqs, t_pred_freqs, b_pred_freqs), axis=1)
+
+    s_metrics_df = __metrics_aux(timescale, s_true_freqs, timescale, s_pred_freqs)
+    a_metrics_df = __metrics_aux(timescale, a_true_freqs, timescale, a_pred_freqs)
+    t_metrics_df = __metrics_aux(timescale, t_true_freqs, timescale, t_pred_freqs)
+    b_metrics_df = __metrics_aux(timescale, b_true_freqs, timescale, b_pred_freqs)
+    
+    mix_multipitch_metrics = mir_eval.multipitch.evaluate(timescale, y_true_freqs, timescale, y_pred_freqs)
+    mix_multipitch_metrics['F-Measure'] = 2 * (mix_multipitch_metrics['Precision'] * mix_multipitch_metrics['Recall']) / (mix_multipitch_metrics['Precision'] + mix_multipitch_metrics['Recall'] + K.epsilon())
+    mix_metrics_df = pd.DataFrame([mix_multipitch_metrics]).astype('float64')
+
+    return mix_metrics_df, s_metrics_df, a_metrics_df, t_metrics_df, b_metrics_df
 
 ############################################################
 
-def f_score_test_precompute(model, save_dir):
+def metrics_test_precompute(model, save_dir):
+    #songs = pick_songlist(amount=5, split='test')
     songs = pick_songlist(amount=805, split='test')
-    #songs = sscs.pick_songlist(amount=300, split='test')
 
-    def multivoice_f_score(song):
+    mix_df = pd.DataFrame()
+    sop_df = pd.DataFrame()
+    alto_df = pd.DataFrame()
+    ten_df = pd.DataFrame()
+    bass_df = pd.DataFrame()
+
+    for song in songs:
         voice_splits = read_all_voice_splits(song)
         voice_pred = model.predict(voice_splits[0])
 
@@ -1155,22 +1154,35 @@ def f_score_test_precompute(model, save_dir):
         mix_pred_postproc = pred_postproc[0] + pred_postproc[1] + pred_postproc[2] + pred_postproc[3]
         mix_pred_postproc = vectorized_downsample_limit(mix_pred_postproc)
 
-        f_scores = list(map(f_score, splits_reshaped[1:], pred_postproc))
+        song_mix_df, song_s_df, song_a_df, song_t_df, song_b_df = metrics(splits_reshaped[1:], pred_postproc)
+        song_mix_df.insert(loc=0, column='Songname', value=song)
+        song_s_df.insert(loc=0, column='Songname', value=song)
+        song_a_df.insert(loc=0, column='Songname', value=song)
+        song_t_df.insert(loc=0, column='Songname', value=song)
+        song_b_df.insert(loc=0, column='Songname', value=song)
+        mix_df = pd.concat([mix_df, song_mix_df], axis=0)
+        sop_df = pd.concat([sop_df, song_s_df], axis=0)
+        alto_df = pd.concat([alto_df, song_a_df], axis=0)
+        ten_df = pd.concat([ten_df, song_t_df], axis=0)
+        bass_df = pd.concat([bass_df, song_b_df], axis=0)
 
-        return f_scores
-
-    f_scores = np.array(list(map(multivoice_f_score, songs)))
-    f_scores = f_scores.T
-    np.save(save_dir, f_scores)
+    mix_df.to_hdf(save_dir, 'mix', mode='w', complevel=9, complib='blosc', append=False, format='table')
+    sop_df.to_hdf(save_dir, 'soprano', mode='a', complevel=9, complib='blosc', append=True, format='table')
+    alto_df.to_hdf(save_dir, 'alto', mode='a', complevel=9, complib='blosc', append=True, format='table')
+    ten_df.to_hdf(save_dir, 'tenor', mode='a', complevel=9, complib='blosc', append=True, format='table')
+    bass_df.to_hdf(save_dir, 'bass', mode='a', complevel=9, complib='blosc', append=True, format='table')
     
-    return f_scores
+    return mix_df, sop_df, alto_df, ten_df, bass_df
 
 ############################################################
 
-def mean_and_deviation(f_score_array):
-    mean = np.mean(f_score_array, axis=1)
-    std = np.std(f_score_array, axis=1)
-    print(mean, std)
+def metrics_load_precomputed(file_path):
+    mix_df = pd.read_hdf(file_path, key='mix', mode='r')
+    sop_df = pd.read_hdf(file_path, key='soprano', mode='r')
+    alto_df = pd.read_hdf(file_path, key='alto', mode='r')
+    ten_df = pd.read_hdf(file_path, key='tenor', mode='r')
+    bass_df = pd.read_hdf(file_path, key='bass', mode='r')
+    return mix_df, sop_df, alto_df, ten_df, bass_df
 
 ############################################################
 
@@ -1297,7 +1309,7 @@ def plot_random(voice, split='train'):
 ############################################################
 
 def playground(model):
-    rand_song =pick_random_song(split='test')
+    rand_song = pick_random_song(split='test')
     mix, s, a, t, b = read_all_voice_splits(rand_song)
 
     s_pred, a_pred, t_pred, b_pred = model.predict(mix)
@@ -1308,6 +1320,8 @@ def playground(model):
     t = np.moveaxis(t, 0, 1).reshape(360, -1)
     b = np.moveaxis(b, 0, 1).reshape(360, -1)
 
+    y_true = np.array([s, a, t, b])
+
     s_pred_postproc = prediction_postproc(s_pred).astype(np.float32)
     a_pred_postproc = prediction_postproc(a_pred).astype(np.float32)
     t_pred_postproc = prediction_postproc(t_pred).astype(np.float32)
@@ -1315,16 +1329,24 @@ def playground(model):
     mix_pred_postproc = s_pred_postproc + a_pred_postproc + t_pred_postproc + b_pred_postproc
     mix_pred_postproc = vectorized_downsample_limit(mix_pred_postproc)
 
-    s_fscore = f_score(s, s_pred_postproc)
-    a_fscore = f_score(a, a_pred_postproc)
-    t_fscore = f_score(t, t_pred_postproc)
-    b_fscore = f_score(b, b_pred_postproc)
+    y_pred_postproc = np.array([s_pred_postproc, a_pred_postproc, t_pred_postproc, b_pred_postproc])
 
+    song_metrics = metrics(y_true, y_pred_postproc)
+
+    mix_fscore = song_metrics[0]['F-Measure'].to_numpy()[0]
+    s_fscore = song_metrics[1]['F-Measure'].to_numpy()[0]
+    a_fscore = song_metrics[2]['F-Measure'].to_numpy()[0]
+    t_fscore = song_metrics[3]['F-Measure'].to_numpy()[0]
+    b_fscore = song_metrics[4]['F-Measure'].to_numpy()[0]
+
+    print(f"Song: {rand_song}")
+    print("===================")
     print("F-Scores:")
     print(f"Soprano: {s_fscore}")
     print(f"Alto: {a_fscore}")
     print(f"Tenor: {t_fscore}")
     print(f"Bass: {b_fscore}")
+    print(f"Mix: {mix_fscore}")
     print()
 
     plot(mix, title='Mix - Ground Truth')
