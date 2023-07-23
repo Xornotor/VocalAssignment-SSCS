@@ -1135,8 +1135,9 @@ def metrics(y_true_matrix, y_pred_matrix, true_bin=True, true_timescale=None):
 ############################################################
 
 def metrics_test_precompute(model, save_dir):
-    #songs = pick_songlist(amount=5, split='test')
-    songs = pick_songlist(amount=805, split='test')
+    #set amount to 805 to calculate metrics to entire test set
+    amount = 805
+    songs = pick_songlist(amount=amount, split='test')
 
     mix_df = pd.DataFrame()
     sop_df = pd.DataFrame()
@@ -1144,7 +1145,10 @@ def metrics_test_precompute(model, save_dir):
     ten_df = pd.DataFrame()
     bass_df = pd.DataFrame()
 
+    counter = 1
+
     for song in songs:
+        print(f"Song {counter}/{amount}")
         voice_splits = read_all_voice_splits(song)
         voice_pred = model.predict(voice_splits[0])
 
@@ -1165,6 +1169,8 @@ def metrics_test_precompute(model, save_dir):
         alto_df = pd.concat([alto_df, song_a_df], axis=0)
         ten_df = pd.concat([ten_df, song_t_df], axis=0)
         bass_df = pd.concat([bass_df, song_b_df], axis=0)
+
+        counter += 1
 
     mix_df.to_hdf(save_dir, 'mix', mode='w', complevel=9, complib='blosc', append=False, format='table')
     sop_df.to_hdf(save_dir, 'soprano', mode='a', complevel=9, complib='blosc', append=True, format='table')
