@@ -1149,7 +1149,7 @@ def metrics_test_precompute(model, save_dir):
     counter = 1
 
     for song in songs:
-        print(f"Song {counter}/{amount}")
+        print(f"Model {model.name}, Song {counter}/{amount}")
         voice_splits = read_all_voice_splits(song)
         voice_pred = model.predict(voice_splits[0])
 
