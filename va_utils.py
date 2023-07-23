@@ -1097,7 +1097,7 @@ def metrics(y_true_matrix, y_pred_matrix, true_bin=True, true_timescale=None):
         t_true_freqs_raw = y_true_matrix[2].reshape(-1, 1)
         b_true_freqs_raw = y_true_matrix[3].reshape(-1, 1)
 
-    if((true_timescale).all() == None):
+    if(true_timescale is None):
         s_true_freqs = s_true_freqs_raw
         a_true_freqs = a_true_freqs_raw
         t_true_freqs = t_true_freqs_raw
