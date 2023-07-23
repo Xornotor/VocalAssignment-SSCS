@@ -1073,10 +1073,15 @@ vec_bin_to_freq = np.vectorize(bin_to_freq)
 
 ############################################################
 
+def f_score(precision, recall):
+    return 2 * (precision * recall) / (precision + recall + K.epsilon())
+
+############################################################
+
 def __metrics_aux(ref_time, ref_freqs, est_time, est_freqs):
     multipitch_metrics = mir_eval.multipitch.evaluate(ref_time, ref_freqs, est_time, est_freqs)
     melody_metrics = mir_eval.melody.evaluate(ref_time, np.squeeze(ref_freqs), est_time, np.squeeze(est_freqs))
-    multipitch_metrics['F-Measure'] = 2 * (multipitch_metrics['Precision'] * multipitch_metrics['Recall']) / (multipitch_metrics['Precision'] + multipitch_metrics['Recall'] + K.epsilon())
+    multipitch_metrics['F-Measure'] = f_score(multipitch_metrics['Precision'], multipitch_metrics['Recall'])
     metrics_dict = multipitch_metrics
     metrics_dict.update(melody_metrics)
     metrics_df = pd.DataFrame([metrics_dict]).astype('float64')
@@ -1137,7 +1142,7 @@ def metrics(y_true_matrix, y_pred_matrix, true_bin=True, true_timescale=None):
 
 def metrics_test_precompute(model, save_dir):
     #set amount to 805 to calculate metrics to entire test set
-    amount = 805
+    amount = 10
     songs = pick_songlist(amount=amount, split='test')
 
     mix_df = pd.DataFrame()
