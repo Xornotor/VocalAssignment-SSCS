@@ -1048,11 +1048,12 @@ def train(model, ds_train, ds_val, epochs=EPOCHS,
 
 ############################################################
 
-def prediction_postproc(input_array, argmax_and_threshold=True, gaussian_blur=True):
+def prediction_postproc(input_array, argmax_and_threshold=True, gaussian_blur=True, high_pitch_fix=False):
     prediction = np.moveaxis(input_array, 0, 1).reshape(360, -1)
     if(argmax_and_threshold):
         prediction = np.argmax(prediction, axis=0)
-        prediction = np.array([i if i <= 357 else 0 for i in prediction])
+        if(high_pitch_fix):
+            prediction = np.array([i if i <= 357 else 0 for i in prediction])
         threshold = np.zeros((360, prediction.shape[0]))
         threshold[prediction, np.arange(prediction.size)] = 1
         prediction = threshold
@@ -1098,10 +1099,10 @@ def metrics(y_true_matrix, y_pred_matrix, true_bin=True, true_timescale=None):
         b_true_freqs_raw = y_true_matrix[3].reshape(-1, 1)
 
     if(true_timescale is None):
-        s_true_freqs = s_true_freqs_raw
-        a_true_freqs = a_true_freqs_raw
-        t_true_freqs = t_true_freqs_raw
-        b_true_freqs = b_true_freqs_raw
+        s_true_freqs = np.copy(s_true_freqs_raw)
+        a_true_freqs = np.copy(a_true_freqs_raw)
+        t_true_freqs = np.copy(t_true_freqs_raw)
+        b_true_freqs = np.copy(b_true_freqs_raw)
     else:
         s_true_freqs_raw = [np.array([i]) for i in s_true_freqs_raw.reshape(-1)]
         s_true_freqs = np.array(mir_eval.multipitch.resample_multipitch(true_timescale, s_true_freqs_raw, timescale)).reshape(-1, 1)
@@ -1111,7 +1112,7 @@ def metrics(y_true_matrix, y_pred_matrix, true_bin=True, true_timescale=None):
         t_true_freqs = np.array(mir_eval.multipitch.resample_multipitch(true_timescale, t_true_freqs_raw, timescale)).reshape(-1, 1)
         b_true_freqs_raw = [np.array([i]) for i in b_true_freqs_raw.reshape(-1)]
         b_true_freqs = np.array(mir_eval.multipitch.resample_multipitch(true_timescale, b_true_freqs_raw, timescale)).reshape(-1, 1)
-    
+       
     y_true_freqs = np.concatenate((s_true_freqs, a_true_freqs, t_true_freqs, b_true_freqs), axis=1)
 
     s_pred_freqs = vec_bin_to_freq(np.argmax(y_pred_matrix[0], axis=0)).reshape(-1, 1)
