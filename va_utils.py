@@ -13,25 +13,15 @@ import numpy as np
 import pandas as pd
 import datetime
 from scipy.ndimage import gaussian_filter1d
-import matplotlib as mpl
-from matplotlib import font_manager as fm
-import matplotlib.pyplot as plt
 import tensorflow as tf
 from tensorflow.keras import Model
 from tensorflow.keras.optimizers import Adam
 from tensorflow.keras.losses import BinaryCrossentropy, Reduction
-from tensorflow.keras.metrics import Recall, Precision
 from tensorflow.keras.layers import Input, Resizing, Conv2D, BatchNormalization, Multiply
 from keras import backend as K
 import logging
 import ray
-
-font_dirs = './Assets/Fonts/'
-font_files = fm.findSystemFonts(fontpaths=font_dirs)
-for font in font_files: fm.fontManager.addfont(font)
-
-plt.rcParams['font.family'] = "SF UI Text"
-plt.rcParams['font.size'] = 14
+import va_plots
 
 ray.init(configure_logging=True, logging_level=logging.ERROR,
          num_cpus=6, num_gpus=1, ignore_reinit_error=True)
@@ -1200,128 +1190,6 @@ def metrics_load_precomputed(file_path):
 
 ############################################################
 
-def boxplot(f_score_array, title=''):    
-    fig, ax = plt.subplots(figsize=(4, 6), dpi=200)
-    ax.boxplot(f_score_array.T)
-    ax.set_ylim([0, 1])
-    ax.yaxis.grid(True)
-    ax.xaxis.grid(False)
-    ax.set_xticklabels([f"Soprano\n{np.median(f_score_array[0]):.2f}",
-                        f"Alto\n{np.median(f_score_array[1]):.2f}",
-                        f"Tenor\n{np.median(f_score_array[2]):.2f}",
-                        f"Bass\n{np.median(f_score_array[3]):.2f}"])
-    if(title != ''):
-        ax.set_title(title)
-
-    plt.show()
-
-############################################################
-
-def joint_f_histograms(f_scores, title=''):
-    s_counts, s_bins = np.histogram(f_scores[0], bins=100)
-    a_counts, a_bins = np.histogram(f_scores[1], bins=100)
-    t_counts, t_bins = np.histogram(f_scores[2], bins=100)
-    b_counts, b_bins = np.histogram(f_scores[3], bins=100)
-    plt.figure(figsize=(12,4.5), dpi=200)
-    plt.grid(visible=True, axis='y')
-    plt.stairs(s_counts, s_bins, label='soprano')
-    plt.stairs(a_counts, a_bins, label='alto')
-    plt.stairs(t_counts, t_bins, label='tenor')
-    plt.stairs(b_counts, b_bins, label='bass')
-    plt.ylim(0, 225)
-    plt.legend()
-    if(title != ''):
-        plt.title(title)
-    plt.show()
-
-############################################################
-
-def voice_f_histograms(f_scores, title=''):
-    s_counts, s_bins = np.histogram(f_scores[0], bins=100)
-    a_counts, a_bins = np.histogram(f_scores[1], bins=100)
-    t_counts, t_bins = np.histogram(f_scores[2], bins=100)
-    b_counts, b_bins = np.histogram(f_scores[3], bins=100)
-
-    fig, axs = plt.subplots(2, 2, figsize=(15, 7), dpi=200, constrained_layout=True)
-    fig.subplots_adjust(top=0.85)
-    #fig.tight_layout(pad=2.0)
-    if(title != ''):
-        fig.suptitle(title)
-    axs[0][0].yaxis.grid(True)
-    axs[0][0].xaxis.grid(False)
-    axs[0][0].stairs(s_counts, s_bins, fill=True)
-    axs[0][0].set_title("Soprano - Histograma")
-    axs[0][0].set_xlim([0, 1])
-    axs[0][0].set_ylim([0, 225])
-
-    axs[0][1].yaxis.grid(True)
-    axs[0][1].xaxis.grid(False)
-    axs[0][1].stairs(a_counts, a_bins, fill=True, color='orange')
-    axs[0][1].set_title("Alto - Histograma")
-    axs[0][1].set_xlim([0, 1])
-    axs[0][1].set_ylim([0, 225])
-    
-    axs[1][0].yaxis.grid(True)
-    axs[1][0].xaxis.grid(False)
-    axs[1][0].stairs(t_counts, t_bins, fill=True, color='green')
-    axs[1][0].set_title("Tenor - Histograma")
-    axs[1][0].set_xlim([0, 1])
-    axs[1][0].set_ylim([0, 225])
-    
-    axs[1][1].yaxis.grid(True)
-    axs[1][1].xaxis.grid(False)
-    axs[1][1].stairs(b_counts, b_bins, fill=True, color='red')
-    axs[1][1].set_title("Bass - Histograma")
-    axs[1][1].set_xlim([0, 1])
-    axs[1][1].set_ylim([0, 225])
-    
-    plt.show()
-
-############################################################
-
-def plot(dataframe, colorbar=False, title=''):
-
-    aspect_ratio = (3/8)*dataframe.shape[1]/dataframe.shape[0]
-    fig, ax = plt.subplots(figsize=(13, 7), dpi=200)
-    if(title != ''):
-        ax.set_title(title)
-    im = ax.imshow(dataframe, interpolation='nearest', aspect=aspect_ratio,
-        cmap = mpl.colormaps['BuPu'])
-    if colorbar:
-        fig.colorbar(im, shrink=0.5)
-    ax.invert_yaxis()
-    plt.show()
-
-############################################################
-
-def plot_activation_maps(actv_maps, colorbar=False, title=''):
-
-    aspect_ratio = (3.75/8)*actv_maps.shape[1]/actv_maps.shape[0]
-    fig, axs = plt.subplots(4, 4, figsize=(13, 6), dpi=500, constrained_layout=True)
-    if(title != ''):
-        fig.suptitle(title)
-    for i in range(4):
-        for j in range(4):
-            im = axs[i][j].imshow(actv_maps[:, :, 4*i + j], interpolation='nearest',
-                            aspect=aspect_ratio, cmap = mpl.colormaps['BuPu'])
-            axs[i][j].invert_yaxis()
-            axs[i][j].xaxis.set_tick_params(labelbottom=False)
-            axs[i][j].yaxis.set_tick_params(labelleft=False)
-            axs[i][j].set_xticks([])
-            axs[i][j].set_yticks([])
-    if colorbar:
-        fig.colorbar(im, ax=axs[:, :], shrink=0.7, location='right')
-    plt.show()
-
-############################################################
-
-def plot_random(voice, split='train'):
-    
-    random_song = pick_random_song(split)
-    plot(ray.get(read_voice.remote(random_song, voice)))
-
-############################################################
-
 def playground(model):
     rand_song = pick_random_song(split='test')
     mix, s, a, t, b = read_all_voice_splits(rand_song)
@@ -1343,9 +1211,13 @@ def playground(model):
     mix_pred_postproc = s_pred_postproc + a_pred_postproc + t_pred_postproc + b_pred_postproc
     mix_pred_postproc = vectorized_downsample_limit(mix_pred_postproc)
 
-    y_pred_postproc = np.array([s_pred_postproc, a_pred_postproc, t_pred_postproc, b_pred_postproc])
+    y_pred_postproc = np.array([[s_pred_postproc], [a_pred_postproc], [t_pred_postproc], [b_pred_postproc]])
+    y_pred_postproc = np.squeeze(y_pred_postproc)
 
-    song_metrics = metrics(y_true, y_pred_postproc)
+    y_true_freqs = bin_matrix_to_freq(y_true)
+    y_pred_freqs = bin_matrix_to_freq(y_pred_postproc)
+    
+    song_metrics = metrics(y_true_freqs, y_pred_freqs)
 
     mix_fscore = song_metrics[0]['F-Measure'].to_numpy()[0]
     s_fscore = song_metrics[1]['F-Measure'].to_numpy()[0]
@@ -1363,20 +1235,20 @@ def playground(model):
     print(f"Mix: {mix_fscore}")
     print()
 
-    plot(mix, title='Mix - Ground Truth')
-    plot(mix_pred_postproc, title='Mix - Rebuilt from predictions from ' + model.name)
+    va_plots.plot(mix, title='Mix - Ground Truth')
+    va_plots.plot(mix_pred_postproc, title='Mix - Rebuilt from predictions from ' + model.name)
 
-    plot(s, title='Soprano - Ground Truth')
-    plot(s_pred_postproc, title='Soprano - Prediction from ' + model.name)
+    va_plots.plot(s, title='Soprano - Ground Truth')
+    va_plots.plot(s_pred_postproc, title='Soprano - Prediction from ' + model.name)
 
-    plot(a, title='Alto - Ground Truth')
-    plot(a_pred_postproc, title='Alto - Prediction from ' + model.name)
+    va_plots.plot(a, title='Alto - Ground Truth')
+    va_plots.plot(a_pred_postproc, title='Alto - Prediction from ' + model.name)
 
-    plot(t, title='Tenor - Ground Truth')
-    plot(t_pred_postproc, title='Tenor - Prediction from ' + model.name)
+    va_plots.plot(t, title='Tenor - Ground Truth')
+    va_plots.plot(t_pred_postproc, title='Tenor - Prediction from ' + model.name)
 
-    plot(b, title='Bass - Ground Truth')
-    plot(b_pred_postproc, title='Bass - Prediction from ' + model.name)
+    va_plots.plot(b, title='Bass - Ground Truth')
+    va_plots.plot(b_pred_postproc, title='Bass - Prediction from ' + model.name)
 
     song_to_midi(s, a, t, b, './MIDI/original.mid')
     song_to_midi(s_pred_postproc, a_pred_postproc, t_pred_postproc, b_pred_postproc, './MIDI/predicted.mid')

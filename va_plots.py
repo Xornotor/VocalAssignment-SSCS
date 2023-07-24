@@ -135,3 +135,5 @@ def plot_activation_maps(actv_maps, colorbar=False, title=''):
     if colorbar:
         fig.colorbar(im, ax=axs[:, :], shrink=0.7, location='right')
     plt.show()
+
+############################################################
