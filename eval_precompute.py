@@ -1,6 +1,6 @@
 import va_utils
 
-for i in range(5):
+for i in [5]:
     if (i == 0):
         ckpt_dir = './Checkpoints/mask_voas_v2_treino1.keras'
         model = va_utils.mask_voas_cnn_v2_model()
@@ -20,7 +20,11 @@ for i in range(5):
     elif (i == 4):
         ckpt_dir = './Checkpoints/voas_treino1.keras'
         model = va_utils.voas_cnn_model()
-        log_folder = 'voas_cnn'
+        log_folder = 'voas_cnn_retreino'
+    elif (i == 5):
+        ckpt_dir = './Checkpoints/voas_cnn_original.h5'
+        model = va_utils.voas_cnn_model()
+        log_folder = 'voas_cnn_original'
         
     va_utils.load_weights(model, ckpt_dir=ckpt_dir)
     metrics_dir = './Evaluation_Data/' + log_folder + '_f-scores_treino1.h5'

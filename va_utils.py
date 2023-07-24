@@ -1049,9 +1049,10 @@ vec_bin_to_freq = np.vectorize(bin_to_freq)
 ############################################################
 
 def resample_timescale(freqs, ref_timescale):
-    timescale = np.arange(0, 0.011609977 * (freqs.shape[0]), 0.011609977)[:freqs.shape[0]]
+    max_time = ref_timescale[-1]
+    timescale = np.arange(0, max_time, 0.011609977)
     freqs_reshape = [np.array([i]) for i in freqs.reshape(-1)]
-    output_freqs = np.array(mir_eval.multipitch.resample_multipitch(ref_timescale, freqs_reshape, timescale)).reshape(-1, 1)
+    output_freqs = np.array([mir_eval.multipitch.resample_multipitch(ref_timescale, freqs_reshape, timescale)]).reshape(-1, 1)
     return output_freqs
 
 ############################################################
@@ -1103,10 +1104,10 @@ def metrics(y_true_matrix, y_pred_matrix, true_timescale=None):
         t_true_freqs = y_true_matrix[2].reshape(-1, 1)
         b_true_freqs = y_true_matrix[3].reshape(-1, 1)
     else:
-        s_true_freqs = resample_timescale(y_true_matrix[0].reshape(-1, 1), true_timescale)
-        a_true_freqs = resample_timescale(y_true_matrix[1].reshape(-1, 1), true_timescale)
-        t_true_freqs = resample_timescale(y_true_matrix[2].reshape(-1, 1), true_timescale)
-        b_true_freqs = resample_timescale(y_true_matrix[3].reshape(-1, 1), true_timescale)
+        s_true_freqs = resample_timescale(y_true_matrix[0].reshape(-1, 1), true_timescale)[:y_pred_matrix.shape[1]]
+        a_true_freqs = resample_timescale(y_true_matrix[1].reshape(-1, 1), true_timescale)[:y_pred_matrix.shape[1]]
+        t_true_freqs = resample_timescale(y_true_matrix[2].reshape(-1, 1), true_timescale)[:y_pred_matrix.shape[1]]
+        b_true_freqs = resample_timescale(y_true_matrix[3].reshape(-1, 1), true_timescale)[:y_pred_matrix.shape[1]]
        
     y_true_freqs = np.concatenate((s_true_freqs, a_true_freqs, t_true_freqs, b_true_freqs), axis=1)
 
