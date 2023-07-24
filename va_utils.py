@@ -1236,6 +1236,6 @@ def playground(model):
     va_plots.plot(b_pred_postproc, title='Bass - Prediction from ' + model.name)
 
     songname_to_midi(rand_song, write_path='./MIDI/original.mid')
-    song_to_midi(s_pred_postproc, a_pred_postproc, t_pred_postproc, b_pred_postproc, './MIDI/predicted.mid')
+    song_to_midi(s_pred_postproc.T, a_pred_postproc.T, t_pred_postproc.T, b_pred_postproc.T, './MIDI/predicted.mid')
 
 ############################################################
