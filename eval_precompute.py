@@ -1,6 +1,6 @@
 import va_utils
 
-for i in range(3):
+for i in range(5):
     if (i == 0):
         ckpt_dir = './Checkpoints/mask_voas_v2_treino1.keras'
         model = va_utils.mask_voas_cnn_v2_model()

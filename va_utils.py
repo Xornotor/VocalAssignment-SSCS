@@ -23,6 +23,7 @@ from tensorflow.keras.losses import BinaryCrossentropy, Reduction
 from tensorflow.keras.metrics import Recall, Precision
 from tensorflow.keras.layers import Input, Resizing, Conv2D, BatchNormalization, Multiply
 from keras import backend as K
+import logging
 import ray
 
 font_dirs = './Assets/Fonts/'
@@ -32,7 +33,8 @@ for font in font_files: fm.fontManager.addfont(font)
 plt.rcParams['font.family'] = "SF UI Text"
 plt.rcParams['font.size'] = 14
 
-ray.init(ignore_reinit_error=True)
+ray.init(configure_logging=True, logging_level=logging.ERROR,
+         num_cpus=6, num_gpus=1, ignore_reinit_error=True)
 os.system("load_ext tensorboard")
 
 ############################################################
@@ -755,59 +757,32 @@ def read_all_voices(name):
 
 ############################################################
 
-@ray.remote
 def split_and_reshape(df, split_size=SPLIT_SIZE):
-    
     split_arr = np.array_split(df, df.shape[1]/split_size, axis=1)
     split_arr = np.array([i.iloc[:, :split_size] for i in split_arr])
     return split_arr
 
 ############################################################
 
-@ray.remote
-def parallel_read_all_voice_splits(name, split_size=SPLIT_SIZE):
+def read_all_voice_splits(name, split_size=SPLIT_SIZE):
     mix_raw, satb_raw = read_all_voices(name)
     df_voices = satb_raw
     df_voices.insert(0, mix_raw)
-    voice_splits = [split_and_reshape.remote(df, split_size) for df in df_voices]
-    mix_splits = ray.get(voice_splits)[0]
-    s_splits = ray.get(voice_splits)[1]
-    a_splits = ray.get(voice_splits)[2]
-    t_splits = ray.get(voice_splits)[3]
-    b_splits = ray.get(voice_splits)[4]
+    voice_splits = [split_and_reshape(df, split_size) for df in df_voices]
+    mix_splits = voice_splits[0]
+    s_splits = voice_splits[1]
+    a_splits = voice_splits[2]
+    t_splits = voice_splits[3]
+    b_splits = voice_splits[4]
     return mix_splits, s_splits, a_splits, t_splits, b_splits
 
 ############################################################
 
+'''
 def read_all_voice_splits(name, split_size=SPLIT_SIZE):
     mix, s, a, t, b = ray.get(parallel_read_all_voice_splits.remote(name, split_size))
     return mix, s, a, t, b
-
-############################################################
-
-def read_multiple_songs_splits(split_size=SPLIT_SIZE, first=0, amount=5, split='train'):
-    
-    songlist = pick_songlist(first, amount, split)
-    split_access = [parallel_read_all_voice_splits.remote(song, split_size) \
-                    for song in songlist]
-    split_list = ray.get(split_access)
-
-    mix_list = [split_list[i][0] for i in range(amount)]
-    s_list = [split_list[i][1] for i in range(amount)]
-    a_list = [split_list[i][2] for i in range(amount)]
-    t_list = [split_list[i][3] for i in range(amount)]
-    b_list = [split_list[i][4] for i in range(amount)]
-
-    mix_splits = np.concatenate(mix_list, axis=0)
-    s_splits = np.concatenate(s_list, axis=0)
-    a_splits = np.concatenate(a_list, axis=0)
-    t_splits = np.concatenate(t_list, axis=0)
-    b_splits = np.concatenate(b_list, axis=0)
-
-    input = mix_splits
-    outputs = (s_splits, a_splits, t_splits, b_splits)
-    
-    return input, outputs
+'''
 
 ############################################################
 
@@ -1073,6 +1048,36 @@ vec_bin_to_freq = np.vectorize(bin_to_freq)
 
 ############################################################
 
+def resample_timescale(freqs, ref_timescale):
+    timescale = np.arange(0, 0.011609977 * (freqs.shape[0]), 0.011609977)[:freqs.shape[0]]
+    freqs_reshape = [np.array([i]) for i in freqs.reshape(-1)]
+    output_freqs = np.array(mir_eval.multipitch.resample_multipitch(ref_timescale, freqs_reshape, timescale)).reshape(-1, 1)
+    return output_freqs
+
+############################################################
+
+def bin_matrix_to_freq(matrix, ref_timescale=None):
+    s_freqs_raw = vec_bin_to_freq(np.argmax(matrix[0], axis=0)).reshape(-1, 1)
+    a_freqs_raw = vec_bin_to_freq(np.argmax(matrix[1], axis=0)).reshape(-1, 1)
+    t_freqs_raw = vec_bin_to_freq(np.argmax(matrix[2], axis=0)).reshape(-1, 1)
+    b_freqs_raw = vec_bin_to_freq(np.argmax(matrix[3], axis=0)).reshape(-1, 1)
+
+    if(ref_timescale is None):
+        s_freqs = np.copy(s_freqs_raw)
+        a_freqs = np.copy(a_freqs_raw)
+        t_freqs = np.copy(t_freqs_raw)
+        b_freqs = np.copy(b_freqs_raw)
+    else:
+        s_freqs = resample_timescale(s_freqs_raw, ref_timescale)
+        a_freqs = resample_timescale(a_freqs_raw, ref_timescale)
+        t_freqs = resample_timescale(t_freqs_raw, ref_timescale)
+        b_freqs = resample_timescale(b_freqs_raw, ref_timescale)
+        
+    freqs = np.concatenate((s_freqs, a_freqs, t_freqs, b_freqs), axis=1).T
+    return freqs
+
+############################################################
+
 def f_score(precision, recall):
     return 2 * (precision * recall) / (precision + recall + K.epsilon())
 
@@ -1089,51 +1094,36 @@ def __metrics_aux(ref_time, ref_freqs, est_time, est_freqs):
 
 ############################################################
 
-def metrics(y_true_matrix, y_pred_matrix, true_bin=True, true_timescale=None):
-    timescale = np.arange(0, 0.011609977 * (y_pred_matrix[0].shape[1]), 0.011609977)[:y_pred_matrix[0].shape[1]]
+def metrics(y_true_matrix, y_pred_matrix, true_timescale=None):
+    timescale = np.arange(0, 0.011609977 * (y_pred_matrix.shape[1]), 0.011609977)[:y_pred_matrix.shape[1]]
     
-    if(true_bin):
-        s_true_freqs_raw = vec_bin_to_freq(np.argmax(y_true_matrix[0], axis=0)).reshape(-1, 1)
-        a_true_freqs_raw = vec_bin_to_freq(np.argmax(y_true_matrix[1], axis=0)).reshape(-1, 1)
-        t_true_freqs_raw = vec_bin_to_freq(np.argmax(y_true_matrix[2], axis=0)).reshape(-1, 1)
-        b_true_freqs_raw = vec_bin_to_freq(np.argmax(y_true_matrix[3], axis=0)).reshape(-1, 1)
-    else:
-        s_true_freqs_raw = y_true_matrix[0].reshape(-1, 1)
-        a_true_freqs_raw = y_true_matrix[1].reshape(-1, 1)
-        t_true_freqs_raw = y_true_matrix[2].reshape(-1, 1)
-        b_true_freqs_raw = y_true_matrix[3].reshape(-1, 1)
-
     if(true_timescale is None):
-        s_true_freqs = np.copy(s_true_freqs_raw)
-        a_true_freqs = np.copy(a_true_freqs_raw)
-        t_true_freqs = np.copy(t_true_freqs_raw)
-        b_true_freqs = np.copy(b_true_freqs_raw)
+        s_true_freqs = y_true_matrix[0].reshape(-1, 1)
+        a_true_freqs = y_true_matrix[1].reshape(-1, 1)
+        t_true_freqs = y_true_matrix[2].reshape(-1, 1)
+        b_true_freqs = y_true_matrix[3].reshape(-1, 1)
     else:
-        s_true_freqs_raw = [np.array([i]) for i in s_true_freqs_raw.reshape(-1)]
-        s_true_freqs = np.array(mir_eval.multipitch.resample_multipitch(true_timescale, s_true_freqs_raw, timescale)).reshape(-1, 1)
-        a_true_freqs_raw = [np.array([i]) for i in a_true_freqs_raw.reshape(-1)]
-        a_true_freqs = np.array(mir_eval.multipitch.resample_multipitch(true_timescale, a_true_freqs_raw, timescale)).reshape(-1, 1)
-        t_true_freqs_raw = [np.array([i]) for i in t_true_freqs_raw.reshape(-1)]
-        t_true_freqs = np.array(mir_eval.multipitch.resample_multipitch(true_timescale, t_true_freqs_raw, timescale)).reshape(-1, 1)
-        b_true_freqs_raw = [np.array([i]) for i in b_true_freqs_raw.reshape(-1)]
-        b_true_freqs = np.array(mir_eval.multipitch.resample_multipitch(true_timescale, b_true_freqs_raw, timescale)).reshape(-1, 1)
+        s_true_freqs = resample_timescale(y_true_matrix[0].reshape(-1, 1), true_timescale)
+        a_true_freqs = resample_timescale(y_true_matrix[1].reshape(-1, 1), true_timescale)
+        t_true_freqs = resample_timescale(y_true_matrix[2].reshape(-1, 1), true_timescale)
+        b_true_freqs = resample_timescale(y_true_matrix[3].reshape(-1, 1), true_timescale)
        
     y_true_freqs = np.concatenate((s_true_freqs, a_true_freqs, t_true_freqs, b_true_freqs), axis=1)
 
-    s_pred_freqs = vec_bin_to_freq(np.argmax(y_pred_matrix[0], axis=0)).reshape(-1, 1)
-    a_pred_freqs = vec_bin_to_freq(np.argmax(y_pred_matrix[1], axis=0)).reshape(-1, 1)
-    t_pred_freqs = vec_bin_to_freq(np.argmax(y_pred_matrix[2], axis=0)).reshape(-1, 1)
-    b_pred_freqs = vec_bin_to_freq(np.argmax(y_pred_matrix[3], axis=0)).reshape(-1, 1)
+    s_pred_freqs = y_pred_matrix[0].reshape(-1, 1)
+    a_pred_freqs = y_pred_matrix[1].reshape(-1, 1)
+    t_pred_freqs = y_pred_matrix[2].reshape(-1, 1)
+    b_pred_freqs = y_pred_matrix[3].reshape(-1, 1)
 
-    y_pred_freqs = np.concatenate((s_pred_freqs, a_pred_freqs, t_pred_freqs, b_pred_freqs), axis=1)
+    #y_pred_freqs = np.concatenate((s_pred_freqs, a_pred_freqs, t_pred_freqs, b_pred_freqs), axis=1)
 
     s_metrics_df = __metrics_aux(timescale, s_true_freqs, timescale, s_pred_freqs)
     a_metrics_df = __metrics_aux(timescale, a_true_freqs, timescale, a_pred_freqs)
     t_metrics_df = __metrics_aux(timescale, t_true_freqs, timescale, t_pred_freqs)
     b_metrics_df = __metrics_aux(timescale, b_true_freqs, timescale, b_pred_freqs)
     
-    mix_multipitch_metrics = mir_eval.multipitch.evaluate(timescale, y_true_freqs, timescale, y_pred_freqs)
-    mix_multipitch_metrics['F-Measure'] = 2 * (mix_multipitch_metrics['Precision'] * mix_multipitch_metrics['Recall']) / (mix_multipitch_metrics['Precision'] + mix_multipitch_metrics['Recall'] + K.epsilon())
+    mix_multipitch_metrics = mir_eval.multipitch.evaluate(timescale, y_true_freqs, timescale, y_pred_matrix.T)
+    mix_multipitch_metrics['F-Measure'] = f_score(mix_multipitch_metrics['Precision'], mix_multipitch_metrics['Recall'])
     mix_metrics_df = pd.DataFrame([mix_multipitch_metrics]).astype('float64')
 
     return mix_metrics_df, s_metrics_df, a_metrics_df, t_metrics_df, b_metrics_df
@@ -1142,8 +1132,11 @@ def metrics(y_true_matrix, y_pred_matrix, true_bin=True, true_timescale=None):
 
 def metrics_test_precompute(model, save_dir):
     #set amount to 805 to calculate metrics to entire test set
-    amount = 10
+    amount = 805
     songs = pick_songlist(amount=amount, split='test')
+
+    true_f0 = []
+    pred_f0 = []
 
     mix_df = pd.DataFrame()
     sop_df = pd.DataFrame()
@@ -1154,29 +1147,37 @@ def metrics_test_precompute(model, save_dir):
     counter = 1
 
     for song in songs:
-        print(f"Model {model.name}, Song {counter}/{amount}")
+        print(f"Predicting on Model {model.name}, Song {counter}/{amount}")
+        counter += 1
         voice_splits = read_all_voice_splits(song)
         voice_pred = model.predict(voice_splits[0])
+        true_grids = np.array([np.moveaxis(split, 0, 1).reshape(360, -1) for split in voice_splits])[1:]
+        pred_grids = np.array([prediction_postproc(pred).astype(np.float32) for pred in voice_pred])
+        true_f0.append(bin_matrix_to_freq(true_grids))
+        pred_f0.append(bin_matrix_to_freq(pred_grids))
 
-        splits_reshaped = [np.moveaxis(split, 0, 1).reshape(360, -1) for split in voice_splits]
+    print(f"Calculating metrics for Model {model.name}...")
 
-        pred_postproc = [prediction_postproc(pred).astype(np.float32) for pred in voice_pred]
-        mix_pred_postproc = pred_postproc[0] + pred_postproc[1] + pred_postproc[2] + pred_postproc[3]
-        mix_pred_postproc = vectorized_downsample_limit(mix_pred_postproc)
+    @ray.remote
+    def precompute_calc(true_freq, pred_freq, songname):
+        mix_song_df, s_song_df, a_song_df, t_song_df, b_song_df = metrics(true_freq, pred_freq)
+        mix_song_df.insert(loc=0, column='Songname', value=songname)
+        s_song_df.insert(loc=0, column='Songname', value=songname)
+        a_song_df.insert(loc=0, column='Songname', value=songname)
+        t_song_df.insert(loc=0, column='Songname', value=songname)
+        b_song_df.insert(loc=0, column='Songname', value=songname)
+        return [mix_song_df, s_song_df, a_song_df, t_song_df, b_song_df]
 
-        song_mix_df, song_s_df, song_a_df, song_t_df, song_b_df = metrics(splits_reshaped[1:], pred_postproc)
-        song_mix_df.insert(loc=0, column='Songname', value=song)
-        song_s_df.insert(loc=0, column='Songname', value=song)
-        song_a_df.insert(loc=0, column='Songname', value=song)
-        song_t_df.insert(loc=0, column='Songname', value=song)
-        song_b_df.insert(loc=0, column='Songname', value=song)
-        mix_df = pd.concat([mix_df, song_mix_df], axis=0)
-        sop_df = pd.concat([sop_df, song_s_df], axis=0)
-        alto_df = pd.concat([alto_df, song_a_df], axis=0)
-        ten_df = pd.concat([ten_df, song_t_df], axis=0)
-        bass_df = pd.concat([bass_df, song_b_df], axis=0)
+    precompute_array = [precompute_calc.remote(ray.put(true_f0[idx]),
+                                               ray.put(pred_f0[idx]),
+                                               ray.put(songs[idx])) for idx in range(amount)]    
+    precompute = ray.get(precompute_array)
 
-        counter += 1
+    mix_df = pd.concat([precompute[i][0] for i in range(amount)], axis=0, ignore_index=True)
+    sop_df = pd.concat([precompute[i][1] for i in range(amount)], axis=0, ignore_index=True)
+    alto_df = pd.concat([precompute[i][2] for i in range(amount)], axis=0, ignore_index=True)
+    ten_df = pd.concat([precompute[i][3] for i in range(amount)], axis=0, ignore_index=True)
+    bass_df = pd.concat([precompute[i][4] for i in range(amount)], axis=0, ignore_index=True)
 
     mix_df.to_hdf(save_dir, 'mix', mode='w', complevel=9, complib='blosc', append=False, format='table')
     sop_df.to_hdf(save_dir, 'soprano', mode='a', complevel=9, complib='blosc', append=True, format='table')
