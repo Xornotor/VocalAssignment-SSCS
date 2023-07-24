@@ -842,40 +842,33 @@ def downsample_bins(voice):
 
 ############################################################
 
-def create_midi(pr, write_path='./MIDI/midi_track.mid', ticks_per_beat=58,
+def create_midi(freq, write_path='./MIDI/midi_track.mid', ticks_per_beat=58,
                 tempo=90, save_to_file=True, program=53, channel=0):
     
     if(not os.path.exists(midi_dir)):
         os.mkdir(midi_dir)
 
-    def pr_to_list(pr):
+    def freq_to_list(pr):
         # List event = (pitch, velocity, time)
-        T, N = pr.shape
+        T = freq.shape[0]
+        #midi_freqs = np.squeeze(midi_freqs)
+        midi_freqs = np.round(69 + 12*np.log2(freq/440)).squeeze().astype('int')
         t_last = 0
-        pr_tm1 = np.zeros(N)
+        pitch_tm1 = 20
         list_event = []
         for t in range(T):
-            pr_t = pr[t]
-            mask = (pr_t != pr_tm1)
-            if(N == 360): range_step = 5
-            else: range_step = 1
-            if (mask).any():
-                for n in range(0, N):
-                    if mask[n]:
-                        if(N <= 72):
-                            pitch = 25 + n
-                        else:
-                            pitch = 24 + round(n/5)
-                        if int(pr_t[n] * 127) >= 50:
-                            velocity = 127
-                        else:
-                            velocity = 0
-                        # Time is incremented since last event
-                        t_event = t - t_last
-                        t_last = t
-                        list_event.append((pitch, velocity, t_event))
-            pr_tm1 = pr_t
-        list_event.append((0, 0, T - t_last))
+            pitch_t = midi_freqs[t]
+            if (pitch_t != pitch_tm1):
+                velocity = 127
+                if(pitch_t == 24):
+                    pitch_t = 0
+                    velocity = 0
+                t_event = t - t_last
+                t_last = t
+                list_event.append((pitch_tm1, 0, t_event))
+                list_event.append((pitch_t, velocity, 0))
+            pitch_tm1 = pitch_t
+        list_event.append((pitch_tm1, 0, T - t_last))
         return list_event
     # Tempo
     microseconds_per_beat = mido.bpm2tempo(tempo)
@@ -887,7 +880,7 @@ def create_midi(pr, write_path='./MIDI/midi_track.mid', ticks_per_beat=58,
     # Add a new track with the instrument name to the midi file
     track = mid.add_track("Voice Aah")
     # transform the matrix in a list of (pitch, velocity, time)
-    events = pr_to_list(pr)
+    events = freq_to_list(freq)
     #print(events)
     # Tempo
     track.append(mido.MetaMessage('set_tempo', tempo=microseconds_per_beat))
@@ -926,15 +919,14 @@ def create_midi(pr, write_path='./MIDI/midi_track.mid', ticks_per_beat=58,
 
 def song_to_midi(sop, alto, ten, bass, write_path='./MIDI/midi_mix.mid'):
 
-    down_sop = downsample_bins(sop.T)
-    down_alto = downsample_bins(alto.T)
-    down_ten = downsample_bins(ten.T)
-    down_bass = downsample_bins(bass.T)
+    bin_matrix = np.array([sop.T, alto.T, ten.T, bass.T])
 
-    mid_sop = create_midi(down_sop, save_to_file=False, program=52, channel=0)
-    mid_alto = create_midi(down_alto, save_to_file=False, program=53, channel=1)
-    mid_ten = create_midi(down_ten, save_to_file=False, program=49, channel=2)
-    mid_bass = create_midi(down_bass, save_to_file=False, program=50, channel=3)
+    freq_matrix = bin_matrix_to_freq(bin_matrix)
+
+    mid_sop = create_midi(freq_matrix[0], save_to_file=False, program=52, channel=0)
+    mid_alto = create_midi(freq_matrix[1], save_to_file=False, program=53, channel=1)
+    mid_ten = create_midi(freq_matrix[2], save_to_file=False, program=49, channel=2)
+    mid_bass = create_midi(freq_matrix[3], save_to_file=False, program=50, channel=3)
 
     mid_mix = mido.MidiFile()
     mid_mix.ticks_per_beat=mid_sop.ticks_per_beat
@@ -945,7 +937,7 @@ def song_to_midi(sop, alto, ten, bass, write_path='./MIDI/midi_mix.mid'):
 
 ############################################################
 
-def songname_to_midi(songname, write_path='./MIDI/midi_mix.mid'):
+def songname_to_midi(songname, write_path=None):
 
     if(not os.path.exists(midi_dir)):
         os.mkdir(midi_dir)
@@ -957,28 +949,21 @@ def songname_to_midi(songname, write_path='./MIDI/midi_mix.mid'):
     bass = satb[3].to_numpy().T
     mix = mix.T
 
-    down_sop = downsample_bins(sop)
-    down_alto = downsample_bins(alto)
-    down_ten = downsample_bins(ten)
-    down_bass = downsample_bins(bass)
-
-    mid_sop = create_midi(down_sop, save_to_file=False, program=52, channel=0)
-    mid_alto = create_midi(down_alto, save_to_file=False, program=53, channel=1)
-    mid_ten = create_midi(down_ten, save_to_file=False, program=49, channel=2)
-    mid_bass = create_midi(down_bass, save_to_file=False, program=50, channel=3)
-
-    mid_mix = mido.MidiFile()
-    mid_mix.ticks_per_beat=mid_sop.ticks_per_beat
-    mid_mix.tracks = mid_sop.tracks + mid_alto.tracks + mid_ten.tracks + mid_bass.tracks
-    mid_mix.save(write_path)
+    if(write_path is None):
+        wrt = './MIDI/' + songname + '.mid'
+        song_to_midi(sop, alto, ten, bass, write_path=wrt)
+    else:
+        song_to_midi(sop, alto, ten, bass, write_path=write_path)
 
     return
 
 ############################################################
 
-def random_song_to_midi(write_path='./MIDI/midi_mix.mid'):
+def random_song_to_midi():
     song = pick_random_song()
-    songname_to_midi(song, write_path)
+    songname_to_midi(song)
+    mix = ray.get(read_voice.remote(song, 'mix')).to_numpy()
+    va_plots.plot(mix)
     return
 
 ############################################################
@@ -1250,7 +1235,7 @@ def playground(model):
     va_plots.plot(b, title='Bass - Ground Truth')
     va_plots.plot(b_pred_postproc, title='Bass - Prediction from ' + model.name)
 
-    song_to_midi(s, a, t, b, './MIDI/original.mid')
+    songname_to_midi(rand_song, write_path='./MIDI/original.mid')
     song_to_midi(s_pred_postproc, a_pred_postproc, t_pred_postproc, b_pred_postproc, './MIDI/predicted.mid')
 
 ############################################################
