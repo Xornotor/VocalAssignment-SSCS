@@ -848,7 +848,7 @@ def create_midi(freq, write_path='./MIDI/midi_track.mid', ticks_per_beat=58,
     if(not os.path.exists(midi_dir)):
         os.mkdir(midi_dir)
 
-    def freq_to_list(pr):
+    def freq_to_list(freq):
         # List event = (pitch, velocity, time)
         T = freq.shape[0]
         #midi_freqs = np.squeeze(midi_freqs)
