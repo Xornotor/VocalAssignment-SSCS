@@ -51,7 +51,7 @@ def joint_f_histograms(f_scores, title=''):
     plt.stairs(a_counts, a_bins, label='alto')
     plt.stairs(t_counts, t_bins, label='tenor')
     plt.stairs(b_counts, b_bins, label='bass')
-    plt.ylim(0, 120)
+    plt.ylim(0, 225)
     plt.legend()
     if(title != ''):
         plt.title(title)
@@ -75,28 +75,28 @@ def voice_f_histograms(f_scores, title=''):
     axs[0][0].stairs(s_counts, s_bins, fill=True)
     axs[0][0].set_title("Soprano - Histograma")
     axs[0][0].set_xlim([0, 1])
-    axs[0][0].set_ylim([0, 120])
+    axs[0][0].set_ylim([0, 225])
 
     axs[0][1].yaxis.grid(True)
     axs[0][1].xaxis.grid(False)
     axs[0][1].stairs(a_counts, a_bins, fill=True, color='orange')
     axs[0][1].set_title("Alto - Histograma")
     axs[0][1].set_xlim([0, 1])
-    axs[0][1].set_ylim([0, 120])
+    axs[0][1].set_ylim([0, 225])
     
     axs[1][0].yaxis.grid(True)
     axs[1][0].xaxis.grid(False)
     axs[1][0].stairs(t_counts, t_bins, fill=True, color='green')
     axs[1][0].set_title("Tenor - Histograma")
     axs[1][0].set_xlim([0, 1])
-    axs[1][0].set_ylim([0, 120])
+    axs[1][0].set_ylim([0, 225])
     
     axs[1][1].yaxis.grid(True)
     axs[1][1].xaxis.grid(False)
     axs[1][1].stairs(b_counts, b_bins, fill=True, color='red')
     axs[1][1].set_title("Bass - Histograma")
     axs[1][1].set_xlim([0, 1])
-    axs[1][1].set_ylim([0, 120])
+    axs[1][1].set_ylim([0, 225])
     
     plt.show()
 
