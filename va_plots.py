@@ -66,10 +66,10 @@ def voice_f_histograms(f_scores, title=''):
     b_counts, b_bins = np.histogram(f_scores[3], bins=100)
 
     fig, axs = plt.subplots(2, 2, figsize=(15, 7), dpi=200, constrained_layout=True)
-    fig.subplots_adjust(top=0.85)
-    #fig.tight_layout(pad=2.0)
+    fig.set_layout_engine('tight')
+    fig.subplots_adjust(left=0.15, bottom=0.925, right=0.175, top=1, wspace=0.2, hspace=0.2)
     if(title != ''):
-        fig.suptitle(title)
+        fig.suptitle(title, fontsize=30)
     axs[0][0].yaxis.grid(True)
     axs[0][0].xaxis.grid(False)
     axs[0][0].stairs(s_counts, s_bins, fill=True)
@@ -134,6 +134,108 @@ def plot_activation_maps(actv_maps, colorbar=False, title=''):
             axs[i][j].set_yticks([])
     if colorbar:
         fig.colorbar(im, ax=axs[:, :], shrink=0.7, location='right')
+    plt.show()
+
+############################################################
+
+def evaluation_boxplots(df_soprano, df_alto, df_tenor, df_bass, title=''):
+
+    precision = np.array([df_soprano['Precision'].to_numpy(),
+                          df_alto['Precision'].to_numpy(),
+                          df_tenor['Precision'].to_numpy(),
+                          df_bass['Precision'].to_numpy()]).T
+    
+    recall = np.array([df_soprano['Recall'].to_numpy(),
+                        df_alto['Recall'].to_numpy(),
+                        df_tenor['Recall'].to_numpy(),
+                        df_bass['Recall'].to_numpy()]).T
+    
+    f_score = np.array([df_soprano['F-Measure'].to_numpy(),
+                        df_alto['F-Measure'].to_numpy(),
+                        df_tenor['F-Measure'].to_numpy(),
+                        df_bass['F-Measure'].to_numpy()]).T
+    
+    raw_pitch = np.array([df_soprano['Raw Pitch Accuracy'].to_numpy(),
+                        df_alto['Raw Pitch Accuracy'].to_numpy(),
+                        df_tenor['Raw Pitch Accuracy'].to_numpy(),
+                        df_bass['Raw Pitch Accuracy'].to_numpy()]).T
+    
+    raw_chroma = np.array([df_soprano['Raw Chroma Accuracy'].to_numpy(),
+                        df_alto['Raw Chroma Accuracy'].to_numpy(),
+                        df_tenor['Raw Chroma Accuracy'].to_numpy(),
+                        df_bass['Raw Chroma Accuracy'].to_numpy()]).T
+    
+    overall_acc = np.array([df_soprano['Overall Accuracy'].to_numpy(),
+                        df_alto['Overall Accuracy'].to_numpy(),
+                        df_tenor['Overall Accuracy'].to_numpy(),
+                        df_bass['Overall Accuracy'].to_numpy()]).T
+
+    fig, axs = plt.subplots(2, 3, figsize=(13, 8), dpi=200, constrained_layout=True)
+    fig.set_layout_engine('tight')
+    fig.subplots_adjust(left=0.15, bottom=0.925, right=0.175, top=1, wspace=0.2, hspace=0.2)
+    if(title != ''):
+        fig.suptitle(title, fontsize=30)
+
+    axs[0][0].yaxis.grid(True)
+    axs[0][0].xaxis.grid(False)
+    axs[0][0].boxplot(f_score)
+    axs[0][0].set_title("F-Score")
+    axs[0][0].set_ylim([0, 1])
+    axs[0][0].set_xticklabels([ f"Soprano\n{np.median(f_score.T[0]):.2f}\n({np.std(f_score.T[0]):.2f})",
+                                f"Alto\n{np.median(f_score.T[1]):.2f}\n({np.std(f_score.T[1]):.2f})",
+                                f"Tenor\n{np.median(f_score.T[2]):.2f}\n({np.std(f_score.T[2]):.2f})",
+                                f"Bass\n{np.median(f_score.T[3]):.2f}\n({np.std(f_score.T[3]):.2f})"])
+    
+    axs[0][1].yaxis.grid(True)
+    axs[0][1].xaxis.grid(False)
+    axs[0][1].boxplot(precision)
+    axs[0][1].set_title("Precision")
+    axs[0][1].set_ylim([0, 1])
+    axs[0][1].set_xticklabels([ f"Soprano\n{np.median(precision.T[0]):.2f}\n({np.std(precision.T[0]):.2f})",
+                                f"Alto\n{np.median(precision.T[1]):.2f}\n({np.std(precision.T[1]):.2f})",
+                                f"Tenor\n{np.median(precision.T[2]):.2f}\n({np.std(precision.T[2]):.2f})",
+                                f"Bass\n{np.median(precision.T[3]):.2f}\n({np.std(precision.T[3]):.2f})"])
+    
+    axs[0][2].yaxis.grid(True)
+    axs[0][2].xaxis.grid(False)
+    axs[0][2].boxplot(recall)
+    axs[0][2].set_title("Recall")
+    axs[0][2].set_ylim([0, 1])
+    axs[0][2].set_xticklabels([ f"Soprano\n{np.median(recall.T[0]):.2f}\n({np.std(recall.T[0]):.2f})",
+                                f"Alto\n{np.median(recall.T[1]):.2f}\n({np.std(recall.T[1]):.2f})",
+                                f"Tenor\n{np.median(recall.T[2]):.2f}\n({np.std(recall.T[2]):.2f})",
+                                f"Bass\n{np.median(recall.T[3]):.2f}\n({np.std(recall.T[3]):.2f})"])
+    
+    axs[1][0].yaxis.grid(True)
+    axs[1][0].xaxis.grid(False)
+    axs[1][0].boxplot(raw_pitch)
+    axs[1][0].set_title("Raw Pitch Accuracy")
+    axs[1][0].set_ylim([0, 1])
+    axs[1][0].set_xticklabels([ f"Soprano\n{np.median(raw_pitch.T[0]):.2f}\n({np.std(raw_pitch.T[0]):.2f})",
+                                f"Alto\n{np.median(raw_pitch.T[1]):.2f}\n({np.std(raw_pitch.T[1]):.2f})",
+                                f"Tenor\n{np.median(raw_pitch.T[2]):.2f}\n({np.std(raw_pitch.T[2]):.2f})",
+                                f"Bass\n{np.median(raw_pitch.T[3]):.2f}\n({np.std(raw_pitch.T[3]):.2f})"])
+
+    axs[1][1].yaxis.grid(True)
+    axs[1][1].xaxis.grid(False)
+    axs[1][1].boxplot(raw_chroma)
+    axs[1][1].set_title("Raw Chroma Accuracy")
+    axs[1][1].set_ylim([0, 1])
+    axs[1][1].set_xticklabels([ f"Soprano\n{np.median(raw_chroma.T[0]):.2f}\n({np.std(raw_chroma.T[0]):.2f})",
+                                f"Alto\n{np.median(raw_chroma.T[1]):.2f}\n({np.std(raw_chroma.T[1]):.2f})",
+                                f"Tenor\n{np.median(raw_chroma.T[2]):.2f}\n({np.std(raw_chroma.T[2]):.2f})",
+                                f"Bass\n{np.median(raw_chroma.T[3]):.2f}\n({np.std(raw_chroma.T[3]):.2f})"])
+    
+    axs[1][2].yaxis.grid(True)
+    axs[1][2].xaxis.grid(False)
+    axs[1][2].boxplot(overall_acc)
+    axs[1][2].set_title("Overall Accuracy")
+    axs[1][2].set_ylim([0, 1])
+    axs[1][2].set_xticklabels([ f"Soprano\n{np.median(overall_acc.T[0]):.2f}\n({np.std(overall_acc.T[0]):.2f})",
+                                f"Alto\n{np.median(overall_acc.T[1]):.2f}\n({np.std(overall_acc.T[1]):.2f})",
+                                f"Tenor\n{np.median(overall_acc.T[2]):.2f}\n({np.std(overall_acc.T[2]):.2f})",
+                                f"Bass\n{np.median(overall_acc.T[3]):.2f}\n({np.std(overall_acc.T[3]):.2f})"])
+
     plt.show()
 
 ############################################################
