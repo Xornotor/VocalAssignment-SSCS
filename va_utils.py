@@ -979,7 +979,9 @@ def train(model, ds_train, ds_val, epochs=EPOCHS,
 
     save_cb = tf.keras.callbacks.ModelCheckpoint(   filepath=ckpt_dir,
                                                     save_weights_only=True,
-                                                    verbose=1
+                                                    verbose=1,
+                                                    monitor='val_loss',
+                                                    save_best_only=True
                                                 )
     
     logdir = log_dir + log_folder + "/" + datetime.datetime.now().strftime("%Y%m%d-%H%M%S")
