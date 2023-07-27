@@ -14,6 +14,26 @@ plt.rcParams['font.size'] = 14
 ############################################################
 
 def metrics_load_precomputed(file_path):
+    """Loads precomputed evaluation metrics in HDF5. 
+
+    Parameters
+    ----------
+    file_path : String
+        HDF5 File Path.
+
+    Returns
+    -------
+    mix_df : pd.DataFrame
+        Dataframe containing calculated metrics for mix
+    sop_df : pd.DataFrame
+        Dataframe containing calculated metrics for soprano
+    alto_df : pd.DataFrame
+        Dataframe containing calculated metrics for alto
+    ten_df : pd.DataFrame
+        Dataframe containing calculated metrics for tenor
+    bass_df : pd.DataFrame
+        Dataframe containing calculated metrics for bass
+    """
     mix_df = pd.read_hdf(file_path, key='mix', mode='r')
     sop_df = pd.read_hdf(file_path, key='soprano', mode='r')
     alto_df = pd.read_hdf(file_path, key='alto', mode='r')
@@ -24,6 +44,24 @@ def metrics_load_precomputed(file_path):
 ############################################################
 
 def boxplot(f_score_array, title=''):    
+    """Plots a F-Score boxplot for Soprano, Alto, Tenor and Bass using
+    ``matplotlib``.
+
+    Parameters
+    ----------
+    f_score_array : np.ndarray
+        Array of shape (4, N).
+        f_score_array[0]: Soprano F-Scores
+        f_score_array[1]: Alto F-Scores
+        f_score_array[2]: Tenor F-Scores
+        f_score_array[3]: Bass F-Scores
+    title: String
+        Title for the plot
+
+    Returns
+    -------
+    None
+    """
     fig, ax = plt.subplots(figsize=(4, 6), dpi=200)
     ax.boxplot(f_score_array.T)
     ax.set_ylim([0, 1])
