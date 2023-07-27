@@ -13,25 +13,25 @@ plt.rcParams['font.size'] = 14
 
 ############################################################
 
-def metrics_load_precomputed(file_path):
+def metrics_load_precomputed(file_path: str):
     """Loads precomputed evaluation metrics in HDF5. 
 
     Parameters
     ----------
-    file_path : String
+    ``file_path`` : String
         HDF5 File Path.
 
     Returns
     -------
-    mix_df : pd.DataFrame
+    ``mix_df`` : pd.DataFrame
         Dataframe containing calculated metrics for mix
-    sop_df : pd.DataFrame
+    ``sop_df`` : pd.DataFrame
         Dataframe containing calculated metrics for soprano
-    alto_df : pd.DataFrame
+    ``alto_df`` : pd.DataFrame
         Dataframe containing calculated metrics for alto
-    ten_df : pd.DataFrame
+    ``ten_df`` : pd.DataFrame
         Dataframe containing calculated metrics for tenor
-    bass_df : pd.DataFrame
+    ``bass_df`` : pd.DataFrame
         Dataframe containing calculated metrics for bass
     """
     mix_df = pd.read_hdf(file_path, key='mix', mode='r')
@@ -43,24 +43,29 @@ def metrics_load_precomputed(file_path):
 
 ############################################################
 
-def boxplot(f_score_array, title=''):    
+def boxplot(f_score_array: np.ndarray, title=''):    
     """Plots a F-Score boxplot for Soprano, Alto, Tenor and Bass using
     ``matplotlib``.
 
     Parameters
     ----------
-    f_score_array : np.ndarray
+    ``f_score_array`` : np.ndarray
         Array of shape (4, N).
+
         f_score_array[0]: Soprano F-Scores
+
         f_score_array[1]: Alto F-Scores
+
         f_score_array[2]: Tenor F-Scores
+
         f_score_array[3]: Bass F-Scores
-    title: String
+
+    ``title``: String
         Title for the plot
 
     Returns
     -------
-    None
+    ``None``
     """
     fig, ax = plt.subplots(figsize=(4, 6), dpi=200)
     ax.boxplot(f_score_array.T)
@@ -78,7 +83,29 @@ def boxplot(f_score_array, title=''):
 
 ############################################################
 
-def joint_f_histograms(f_scores, title=''):
+def joint_f_histograms(f_scores: np.ndarray, title=''):
+    """Plots a F-Score multiplot combining the histograms of four voices
+     (Soprano, Alto, Tenor and Bass) using ``matplotlib``.
+
+    Parameters
+    ----------
+    ``f_scores`` : np.ndarray
+        Array of shape (4, N).
+
+        f_scores[0]: Soprano F-Scores
+
+        f_scores[1]: Alto F-Scores
+
+        f_scores[2]: Tenor F-Scores
+
+        f_scores[3]: Bass F-Scores
+    ``title``: String
+        Title for the plot
+
+    Returns
+    -------
+    ``None``
+    """
     s_counts, s_bins = np.histogram(f_scores[0], bins=100)
     a_counts, a_bins = np.histogram(f_scores[1], bins=100)
     t_counts, t_bins = np.histogram(f_scores[2], bins=100)
@@ -97,7 +124,30 @@ def joint_f_histograms(f_scores, title=''):
 
 ############################################################
 
-def voice_f_histograms(f_scores, title=''):
+def voice_f_histograms(f_scores: np.ndarray, title=''):
+    """Generates a subplot imagem with four histograms for the F-Scores of four voices
+     (Soprano, Alto, Tenor and Bass) using ``matplotlib``.
+
+    Parameters
+    ----------
+    ``f_scores`` : np.ndarray
+        Array of shape (4, N).
+
+        f_scores[0]: Soprano F-Scores
+
+        f_scores[1]: Alto F-Scores
+
+        f_scores[2]: Tenor F-Scores
+
+        f_scores[3]: Bass F-Scores
+
+    ``title``: String
+        Title for the plot
+
+    Returns
+    -------
+    ``None``
+    """
     s_counts, s_bins = np.histogram(f_scores[0], bins=100)
     a_counts, a_bins = np.histogram(f_scores[1], bins=100)
     t_counts, t_bins = np.histogram(f_scores[2], bins=100)
@@ -140,8 +190,22 @@ def voice_f_histograms(f_scores, title=''):
 
 ############################################################
 
-def plot(dataframe, colorbar=False, title=''):
+def plot(dataframe: np.ndarray, colorbar=False, title=''):
+    """Plots a heatmap using ``matplotlib``. Used for pitch salience plots.
 
+    Parameters
+    ----------
+    ``dataframe`` : np.ndarray
+        Array of shape (360, N).
+    ``colorbar`` : boolean
+        Enable/disable colorbar. Default is ``False``.
+    ``title``: String
+        Title for the plot
+
+    Returns
+    -------
+    ``None``
+    """
     aspect_ratio = (3/8)*dataframe.shape[1]/dataframe.shape[0]
     fig, ax = plt.subplots(figsize=(13, 7), dpi=200)
     if(title != ''):
@@ -155,7 +219,23 @@ def plot(dataframe, colorbar=False, title=''):
 
 ############################################################
 
-def plot_activation_maps(actv_maps, colorbar=False, title=''):
+def plot_activation_maps(actv_maps: np.ndarray, colorbar=False, title=''):
+    """Plots activation maps using ``matplotlib``. Used for plotting 
+    activation maps for convolutional layers with 16 filters.
+
+    Parameters
+    ----------
+    ``actv_maps`` : np.ndarray
+        Array of shape (360, N, 16).
+    ``colorbar`` : boolean
+        Enable/disable colorbar. Default is ``False``.
+    ``title``: String
+        Title for the plot
+
+    Returns
+    -------
+    ``None``
+    """
 
     aspect_ratio = (3.75/8)*actv_maps.shape[1]/actv_maps.shape[0]
     fig, axs = plt.subplots(4, 4, figsize=(13, 6), dpi=500, constrained_layout=True)
@@ -176,7 +256,26 @@ def plot_activation_maps(actv_maps, colorbar=False, title=''):
 
 ############################################################
 
-def evaluation_boxplots(df_soprano, df_alto, df_tenor, df_bass, title=''):
+def evaluation_boxplots(df_soprano: pd.DataFrame,
+                        df_alto: pd.DataFrame,
+                        df_tenor: pd.DataFrame,
+                        df_bass: pd.DataFrame, title=''):
+    
+    """Plots evaluation metrics boxplots using ``matplotlib``.
+
+    Parameters
+    ----------
+    ``df_soprano`` : np.ndarray
+        Array of shape (360, N, 16).
+    ``colorbar`` : boolean
+        Enable/disable colorbar. Default is ``False``.
+    ``title``: String
+        Title for the plot
+
+    Returns
+    -------
+    ``None``
+    """
 
     precision = np.array([df_soprano['Precision'].to_numpy(),
                           df_alto['Precision'].to_numpy(),

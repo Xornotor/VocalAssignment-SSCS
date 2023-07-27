@@ -16,16 +16,16 @@ def voice_metrics(y_true, y_pred,
 
     Parameters
     ----------
-    y_true : np.ndarray
+    ``y_true`` : np.ndarray
         Array of reference frequencies
-    y_pred : np.ndarray
+    ``y_pred`` : np.ndarray
         Array of predicted frequencies
-    timescale : np.ndarray
+    ``timescale`` : np.ndarray
         Array of time stamps
 
     Returns
     -------
-    metrics_df : pd.DataFrame
+    ``metrics_df`` : pd.DataFrame
         Dataframe containing calculated metrics
     """
     y_true_with_silence = [np.array([]) if freq < TRUE_THRES else np.array([freq]) for freq in y_true]
@@ -53,28 +53,28 @@ def mix_metrics(s_true, s_pred,
 
     Parameters
     ----------
-    s_true : np.ndarray
+    ``s_true`` : np.ndarray
         Array of reference frequencies for soprano
-    s_pred : np.ndarray
+    ``s_pred`` : np.ndarray
         Array of predicted frequencies for soprano
-    a_true : np.ndarray
+    ``a_true`` : np.ndarray
         Array of reference frequencies for alto
-    a_pred : np.ndarray
+    ``a_pred`` : np.ndarray
         Array of predicted frequencies for alto
-    t_true : np.ndarray
+    ``t_true`` : np.ndarray
         Array of reference frequencies for tenor
-    t_pred : np.ndarray
+    ``t_pred`` : np.ndarray
         Array of predicted frequencies for tenor
-    b_true : np.ndarray
+    ``b_true`` : np.ndarray
         Array of reference frequencies for bass
-    b_pred : np.ndarray
+    ``b_pred`` : np.ndarray
         Array of predicted frequencies for bass
-    timescale : np.ndarray
+    ``timescale`` : np.ndarray
         Array of time stamps
 
     Returns
     -------
-    metrics_df : pd.DataFrame
+    ``metrics_df`` : pd.DataFrame
         Dataframe containing calculated metrics
     """
     
@@ -104,7 +104,7 @@ def mix_metrics(s_true, s_pred,
 
 ############################################################
 
-def cantoria_metrics(model_type):
+def cantoria_metrics(model_type: int):
 
     """Calculates metrics for Cantoría Dataset predicted multi-pitch estimations
     with ``mir_eval`` library. The metrics are computed for each voice and for
@@ -112,7 +112,7 @@ def cantoria_metrics(model_type):
 
     Parameters
     ----------
-    model_type : int
+    ``model_type`` : int
         Number that represents the model.
         0: MaskVoasCNN
         1: MaskVoasCNNv2
@@ -123,15 +123,15 @@ def cantoria_metrics(model_type):
 
     Returns
     -------
-    mix_df : pd.DataFrame
+    ``mix_df`` : pd.DataFrame
         Dataframe containing calculated metrics for mix
-    sop_df : pd.DataFrame
+    ``sop_df`` : pd.DataFrame
         Dataframe containing calculated metrics for soprano
-    alto_df : pd.DataFrame
+    ``alto_df`` : pd.DataFrame
         Dataframe containing calculated metrics for alto
-    ten_df : pd.DataFrame
+    ``ten_df`` : pd.DataFrame
         Dataframe containing calculated metrics for tenor
-    bass_df : pd.DataFrame
+    ``bass_df`` : pd.DataFrame
         Dataframe containing calculated metrics for bass
     """
 
