@@ -77,7 +77,7 @@ def boxplot(f_score_array: np.ndarray, title=''):
                         f"Tenor\n{np.median(f_score_array[2]):.2f}",
                         f"Bass\n{np.median(f_score_array[3]):.2f}"])
     if(title != ''):
-        ax.set_title(title)
+        ax.set_title(title, pad=16)
 
     plt.show()
 
@@ -119,7 +119,7 @@ def joint_f_histograms(f_scores: np.ndarray, title=''):
     plt.ylim(0, 225)
     plt.legend()
     if(title != ''):
-        plt.title(title)
+        plt.title(title, pad=16)
     plt.show()
 
 ############################################################
@@ -161,28 +161,28 @@ def voice_f_histograms(f_scores: np.ndarray, title=''):
     axs[0][0].yaxis.grid(True)
     axs[0][0].xaxis.grid(False)
     axs[0][0].stairs(s_counts, s_bins, fill=True)
-    axs[0][0].set_title("Soprano - Histograma")
+    axs[0][0].set_title("Soprano - Histograma", pad=8)
     axs[0][0].set_xlim([0, 1])
     axs[0][0].set_ylim([0, 225])
 
     axs[0][1].yaxis.grid(True)
     axs[0][1].xaxis.grid(False)
     axs[0][1].stairs(a_counts, a_bins, fill=True, color='orange')
-    axs[0][1].set_title("Alto - Histograma")
+    axs[0][1].set_title("Alto - Histograma", pad=8)
     axs[0][1].set_xlim([0, 1])
     axs[0][1].set_ylim([0, 225])
     
     axs[1][0].yaxis.grid(True)
     axs[1][0].xaxis.grid(False)
     axs[1][0].stairs(t_counts, t_bins, fill=True, color='green')
-    axs[1][0].set_title("Tenor - Histograma")
+    axs[1][0].set_title("Tenor - Histograma", pad=8)
     axs[1][0].set_xlim([0, 1])
     axs[1][0].set_ylim([0, 225])
     
     axs[1][1].yaxis.grid(True)
     axs[1][1].xaxis.grid(False)
     axs[1][1].stairs(b_counts, b_bins, fill=True, color='red')
-    axs[1][1].set_title("Bass - Histograma")
+    axs[1][1].set_title("Bass - Histograma", pad=8)
     axs[1][1].set_xlim([0, 1])
     axs[1][1].set_ylim([0, 225])
     
@@ -209,7 +209,7 @@ def plot(dataframe: np.ndarray, colorbar=False, title=''):
     aspect_ratio = (3/8)*dataframe.shape[1]/dataframe.shape[0]
     fig, ax = plt.subplots(figsize=(13, 7), dpi=200)
     if(title != ''):
-        ax.set_title(title)
+        ax.set_title(title, pad=16)
     im = ax.imshow(dataframe, interpolation='nearest', aspect=aspect_ratio,
         cmap = mpl.colormaps['BuPu'])
     if colorbar:
@@ -240,7 +240,7 @@ def plot_activation_maps(actv_maps: np.ndarray, colorbar=False, title=''):
     aspect_ratio = (3.75/8)*actv_maps.shape[1]/actv_maps.shape[0]
     fig, axs = plt.subplots(4, 4, figsize=(13, 6), dpi=500, constrained_layout=True)
     if(title != ''):
-        fig.suptitle(title)
+        fig.suptitle(title + '\n')
     for i in range(4):
         for j in range(4):
             im = axs[i][j].imshow(actv_maps[:, :, 4*i + j], interpolation='nearest',
@@ -316,7 +316,7 @@ def evaluation_boxplots(df_soprano: pd.DataFrame,
     axs[0][0].yaxis.grid(True)
     axs[0][0].xaxis.grid(False)
     axs[0][0].boxplot(f_score)
-    axs[0][0].set_title("F-Score")
+    axs[0][0].set_title("F-Score", pad=10)
     axs[0][0].set_ylim([0, 1])
     axs[0][0].set_xticklabels([ f"Soprano\n{np.median(f_score.T[0]):.2f}\n({np.std(f_score.T[0]):.2f})",
                                 f"Alto\n{np.median(f_score.T[1]):.2f}\n({np.std(f_score.T[1]):.2f})",
@@ -326,7 +326,7 @@ def evaluation_boxplots(df_soprano: pd.DataFrame,
     axs[0][1].yaxis.grid(True)
     axs[0][1].xaxis.grid(False)
     axs[0][1].boxplot(precision)
-    axs[0][1].set_title("Precision")
+    axs[0][1].set_title("Precision", pad=10)
     axs[0][1].set_ylim([0, 1])
     axs[0][1].set_xticklabels([ f"Soprano\n{np.median(precision.T[0]):.2f}\n({np.std(precision.T[0]):.2f})",
                                 f"Alto\n{np.median(precision.T[1]):.2f}\n({np.std(precision.T[1]):.2f})",
@@ -336,7 +336,7 @@ def evaluation_boxplots(df_soprano: pd.DataFrame,
     axs[0][2].yaxis.grid(True)
     axs[0][2].xaxis.grid(False)
     axs[0][2].boxplot(recall)
-    axs[0][2].set_title("Recall")
+    axs[0][2].set_title("Recall", pad=10)
     axs[0][2].set_ylim([0, 1])
     axs[0][2].set_xticklabels([ f"Soprano\n{np.median(recall.T[0]):.2f}\n({np.std(recall.T[0]):.2f})",
                                 f"Alto\n{np.median(recall.T[1]):.2f}\n({np.std(recall.T[1]):.2f})",
@@ -346,7 +346,7 @@ def evaluation_boxplots(df_soprano: pd.DataFrame,
     axs[1][0].yaxis.grid(True)
     axs[1][0].xaxis.grid(False)
     axs[1][0].boxplot(raw_pitch)
-    axs[1][0].set_title("Raw Pitch Accuracy")
+    axs[1][0].set_title("Raw Pitch Accuracy", pad=10)
     axs[1][0].set_ylim([0, 1])
     axs[1][0].set_xticklabels([ f"Soprano\n{np.median(raw_pitch.T[0]):.2f}\n({np.std(raw_pitch.T[0]):.2f})",
                                 f"Alto\n{np.median(raw_pitch.T[1]):.2f}\n({np.std(raw_pitch.T[1]):.2f})",
@@ -356,7 +356,7 @@ def evaluation_boxplots(df_soprano: pd.DataFrame,
     axs[1][1].yaxis.grid(True)
     axs[1][1].xaxis.grid(False)
     axs[1][1].boxplot(raw_chroma)
-    axs[1][1].set_title("Raw Chroma Accuracy")
+    axs[1][1].set_title("Raw Chroma Accuracy", pad=10)
     axs[1][1].set_ylim([0, 1])
     axs[1][1].set_xticklabels([ f"Soprano\n{np.median(raw_chroma.T[0]):.2f}\n({np.std(raw_chroma.T[0]):.2f})",
                                 f"Alto\n{np.median(raw_chroma.T[1]):.2f}\n({np.std(raw_chroma.T[1]):.2f})",
@@ -366,7 +366,7 @@ def evaluation_boxplots(df_soprano: pd.DataFrame,
     axs[1][2].yaxis.grid(True)
     axs[1][2].xaxis.grid(False)
     axs[1][2].boxplot(overall_acc)
-    axs[1][2].set_title("Overall Accuracy")
+    axs[1][2].set_title("Overall Accuracy", pad=10)
     axs[1][2].set_ylim([0, 1])
     axs[1][2].set_xticklabels([ f"Soprano\n{np.median(overall_acc.T[0]):.2f}\n({np.std(overall_acc.T[0]):.2f})",
                                 f"Alto\n{np.median(overall_acc.T[1]):.2f}\n({np.std(overall_acc.T[1]):.2f})",

@@ -231,4 +231,10 @@ def cantoria_metrics(model_type: int):
     bass_df.insert(loc=0, column='Songname', value=songlist)
     mix_df.insert(loc=0, column='Songname', value=songlist) 
 
+    sop_df = sop_df.set_index('Songname')
+    alto_df = alto_df.set_index('Songname')
+    ten_df = ten_df.set_index('Songname')
+    bass_df = bass_df.set_index('Songname')
+    mix_df = mix_df.set_index('Songname')
+
     return mix_df, sop_df, alto_df, ten_df, bass_df
