@@ -52,6 +52,18 @@ splitname = sscs_dir + "sscs_splits.json"
 ############################################################
 
 def voas_cnn_model(l_rate = LEARNING_RATE):
+    """Loads VoasCNN compiled model. 
+
+    Parameters
+    ----------
+    ``l_rate`` : Float
+        Learning rate for training.
+
+    Returns
+    -------
+    ``model`` : tf.Model
+        Compiled VoasCNN model.
+    """
     x_in = Input(shape=(360, SPLIT_SIZE, 1))
     
     x = BatchNormalization()(x_in)
@@ -144,6 +156,18 @@ def voas_cnn_model(l_rate = LEARNING_RATE):
 ############################################################
 
 def downsample_voas_cnn_model(l_rate = LEARNING_RATE):
+    """Loads DownsampleVoasCNN compiled model. 
+
+    Parameters
+    ----------
+    ``l_rate`` : Float
+        Learning rate for training.
+
+    Returns
+    -------
+    ``model`` : tf.Model
+        Compiled DownsampleVoasCNN model.
+    """
     x_in = Input(shape=(360, SPLIT_SIZE, 1))
 
     x = Resizing(216, int(SPLIT_SIZE/2), RESIZING_FILTER)(x_in)
@@ -242,6 +266,18 @@ def downsample_voas_cnn_model(l_rate = LEARNING_RATE):
 ############################################################
 
 def downsample_voas_cnn_v2_model(l_rate = LEARNING_RATE):
+    """Loads DownsampleVoasCNNv2 compiled model. 
+
+    Parameters
+    ----------
+    ``l_rate`` : Float
+        Learning rate for training.
+
+    Returns
+    -------
+    ``model`` : tf.Model
+        Compiled DownsampleVoasCNNv2 model.
+    """
     x_in = Input(shape=(360, SPLIT_SIZE, 1))
 
     x = Resizing(90, int(SPLIT_SIZE/2), RESIZING_FILTER,
@@ -342,6 +378,18 @@ def downsample_voas_cnn_v2_model(l_rate = LEARNING_RATE):
 ############################################################
 
 def mask_voas_cnn_model(l_rate = LEARNING_RATE):
+    """Loads MaskVoasCNN compiled model. 
+
+    Parameters
+    ----------
+    ``l_rate`` : Float
+        Learning rate for training.
+
+    Returns
+    -------
+    ``model`` : tf.Model
+        Compiled MaskVoasCNN model.
+    """
     x_in = Input(shape=(360, SPLIT_SIZE, 1))
 
     x = Resizing(90, int(SPLIT_SIZE/2), RESIZING_FILTER,
@@ -444,6 +492,18 @@ def mask_voas_cnn_model(l_rate = LEARNING_RATE):
 ############################################################
 
 def mask_voas_cnn_v2_model(l_rate = LEARNING_RATE):
+    """Loads MaskVoasCNNv2 compiled model. 
+
+    Parameters
+    ----------
+    ``l_rate`` : Float
+        Learning rate for training.
+
+    Returns
+    -------
+    ``model`` : tf.Model
+        Compiled MaskVoasCNNv2 model.
+    """
     x_in = Input(shape=(360, SPLIT_SIZE, 1))
 
     x = Resizing(90, int(SPLIT_SIZE/2), RESIZING_FILTER,
@@ -551,6 +611,7 @@ def mask_voas_cnn_v2_model(l_rate = LEARNING_RATE):
 ############################################################
 
 class SSCS_Sequence(tf.keras.utils.Sequence):
+    """Sequence iterator to access SSCS Dataset."""
     
     #-----------------------------------------------------------#
 
@@ -559,6 +620,20 @@ class SSCS_Sequence(tf.keras.utils.Sequence):
                  batch_size=BATCH_SIZE,
                  split_size=SPLIT_SIZE,
                  training_dtype=TRAINING_DTYPE):
+
+        """SSCS_Sequence constructor.
+
+        Parameters
+        ----------
+        ``filenames`` : list of str
+            List of song filenames.
+        ``batch_size`` : int
+            Literally batch size of the iterator objects.
+        ``split_size`` : int
+            Length (in time bins) for each element in batch.
+        ``training_dtype`` : dtype
+            Dtype for the numeric values.
+        """
 
         if(isinstance(filenames, np.ndarray)):
             self.filenames = [f.decode('utf-8') for f in filenames.tolist()]
@@ -602,11 +677,27 @@ class SSCS_Sequence(tf.keras.utils.Sequence):
 
     def __len__(self):
 
+        """Returns number of batches of the iterator."""
+
         return self.batches_amount
     
     #-----------------------------------------------------------#
 
     def __getitem__(self, idx):
+        """Gets an iterator item.
+
+        Parameters
+        ----------
+        ``idx`` : int
+            Index of the item.
+
+        Returns
+        ----------
+        ``splits[0]`` : tf.Tensor
+            Tensor for the mix splits.
+        ``(splits[1], splits[2], splits[3], splits[4])`` : Tuple of tf.Tensors
+            Tensors for the Soprano, Alto, Tenor and Bass splits.
+        """
 
         tmp_idx = self.idx_get[idx]
         tmp_split = self.split_get[idx]
@@ -621,12 +712,40 @@ class SSCS_Sequence(tf.keras.utils.Sequence):
     
     def __get_split__(self, idx, split):
 
+        """Gets a song split.
+
+        Parameters
+        ----------
+        ``idx`` : int
+            Index of the item.
+        ``split`` : int
+            Index of the split.
+
+        Returns
+        -------
+        ``splits`` : list of ndarray
+            List containing Mix, Soprano, Alto, Tenor and Bass splits, in this order.
+        """
+
         file_access = f"{self.songs_dir}{self.filenames[idx]}.h5"
         data_min = split * self.split_size
         data_max = data_min + self.split_size
         voices = ['mix', 'soprano', 'alto', 'tenor', 'bass']
 
         def read_split(voice):
+
+            """Gets a voice split.
+
+            Parameters
+            ----------
+            ``voice`` : str
+                Voice from which the split is read (mix, soprano, alto, tenor, bass)
+
+            Returns
+            -------
+            ``data`` : ndarray
+                Split from the desired voice
+            """
 
             f = h5py.File(file_access, 'r')
 
@@ -645,11 +764,23 @@ class SSCS_Sequence(tf.keras.utils.Sequence):
 
     def get_splits_per_file(self):
         
+        """Returns the number of splits from each file on the iterator."""
+        
         return self.splits_per_file
 
 ############################################################
 
 def dl_script(url, fname):
+
+    """Download file script.
+
+    Parameters
+    ----------
+    ``url`` : str
+        URL from the file to be downloaded.
+    ``fname`` : str
+        Save name for the file.
+    """
     
     resp = requests.get(url, stream=True)
     total = int(resp.headers.get('content-length', 0))
@@ -666,6 +797,9 @@ def dl_script(url, fname):
 ############################################################
 
 def download():
+
+    """Script to automatically download the SSCS Dataset (converted to HDF5)
+    if Dataset isn't found."""
     
     if(not os.path.exists(dataset_dir)):
         os.mkdir(dataset_dir)
@@ -690,6 +824,21 @@ def download():
 ############################################################
 
 def get_split(split='train'):
+
+    """Gets list of filenames from a subset of SSCS dataset.
+
+    Parameters
+    ----------
+    ``split`` : str
+        Subset to be retrieved (train, validate or test).
+        Default is train.
+
+    Returns
+    -------
+    ``split_list`` : list of str
+        List of song filenames.
+    """
+
     split_str = str(split).lower()
     if(split_str == 'train' or split_str == 'validate' or split_str == 'test'):
         split_list = json.load(open(splitname, 'r'))[split_str]
@@ -700,13 +849,45 @@ def get_split(split='train'):
 ############################################################
 
 def pick_songlist(first=0, amount=5, split='train'):
+
+    """Picks a sequence of songs from a subset of SSCS Dataset.
+
+    Parameters
+    ----------
+    ``first`` : int
+        First song from the sequence to be picked. Default is 0.
+    ``amount`` : int
+        Number of songs in sequence to be picked. Default is 5.
+    ``split`` : str
+        Split from which the songs will be picked (train, validate or test).
+        Default is train.
+
+    Returns
+    -------
+    ``songnames`` : list of str
+        List of song filenames.
+    """
     
     songnames = get_split(split)
-    return songnames[first:first+amount]
+    return songnames
 
 ############################################################
 
 def pick_random_song(split='train'):
+
+    """Picks random song from a subset of SSCS Dataset.
+
+    Parameters
+    ----------
+    ``split`` : str
+        Split from which the song will be picked (train, validate or test).
+        Default is train.
+
+    Returns
+    -------
+    ``songname`` : str
+        Random song filename.
+    """
     
     songnames = get_split(split)
     rng = np.random.randint(0, len(songnames))
@@ -715,6 +896,22 @@ def pick_random_song(split='train'):
 ############################################################
 
 def pick_multiple_random_songs(amount, split='train'):
+
+    """Picks an amount of random songs from a subset of SSCS Dataset.
+
+    Parameters
+    ----------
+    ``amount`` : int
+        Amount of random songs to be picked.
+    ``split`` : str
+        Split from which the song will be picked (train, validate or test).
+        Default is train.
+
+    Returns
+    -------
+    ``songnames`` : list of str
+        Random song filenames.
+    """
     
     return [pick_random_song() for i in range(amount)]
 
@@ -722,6 +919,22 @@ def pick_multiple_random_songs(amount, split='train'):
 
 @ray.remote
 def read_voice(name, voice):
+
+    """Reads a voice from a song from SSCS Dataset.
+
+    Parameters
+    ----------
+    ``name`` : str
+        Name of the song.
+    ``voice`` : str
+        Voice to be read (mix, soprano, alto, tenor, bass).
+
+    Returns
+    -------
+    ``timefreq_voice`` : pd.DataFrame
+        Dataframe with resolution 360 x N with the time/frequency
+        representation for the voice.
+    """
 
     if  (voice != 'mix' and \
         voice != 'soprano' and \
@@ -737,6 +950,24 @@ def read_voice(name, voice):
 ############################################################
 
 def read_all_voices(name):
+
+    """Reads all voices from a song from SSCS Dataset.
+
+    Parameters
+    ----------
+    ``name`` : str
+        Name of the song.
+
+    Returns
+    -------
+    ``mix`` : pd.DataFrame
+        Dataframe with resolution 360 x N with the time/frequency
+        representation for the mix voice.
+    ``satb`` : list of pd.DataFrames
+        List with four dataframes with resolution 360 x N containing
+        time/frequency representations for soprano, alto, tenor and bass
+        voices, in this order.
+    """
     
     voices = ['mix', 'soprano', 'alto', 'tenor', 'bass']
     data_access = [read_voice.remote(name, voice) for voice in voices]
@@ -748,6 +979,25 @@ def read_all_voices(name):
 ############################################################
 
 def split_and_reshape(df, split_size=SPLIT_SIZE):
+
+    """Splits and reshapes a voice from a song
+
+    Parameters
+    ----------
+    ``df`` : pd.DataFrame
+        Dataframe with time/frequency representation of a voice
+        from a song.
+    ``split_size`` : int
+        Size from each split, in time bins. Default is SPLIT_SIZE.
+
+    Returns
+    -------
+    ``split_arr`` : ndarray
+        Multidimensional array containing K splits of
+        dimension 360 x ``split_size``. K depends on the
+        duration of the song.
+    """
+
     split_arr = np.array_split(df, df.shape[1]/split_size, axis=1)
     split_arr = np.array([i.iloc[:, :split_size] for i in split_arr])
     return split_arr
@@ -755,6 +1005,24 @@ def split_and_reshape(df, split_size=SPLIT_SIZE):
 ############################################################
 
 def read_all_voice_splits(name, split_size=SPLIT_SIZE):
+
+    """Reads all voices from a song and returns it splitted in 
+    a fixed size of time bins per split.
+
+    Parameters
+    ----------
+    ``name`` : str
+        Name of the song to be retrieved.
+    ``split_size`` : int
+        Size from each split, in time bins. Default is SPLIT_SIZE.
+
+    Returns
+    -------
+    ``mix_splits`` : ndarray
+        Multidimensional array containing K splits of
+        dimension 360 x ``split_size``.
+    """
+
     mix_raw, satb_raw = read_all_voices(name)
     df_voices = satb_raw
     df_voices.insert(0, mix_raw)
@@ -768,20 +1036,54 @@ def read_all_voice_splits(name, split_size=SPLIT_SIZE):
 
 ############################################################
 
-'''
-def read_all_voice_splits(name, split_size=SPLIT_SIZE):
-    mix, s, a, t, b = ray.get(parallel_read_all_voice_splits.remote(name, split_size))
-    return mix, s, a, t, b
-'''
-
-############################################################
-
 def get_sequence(split='train', start_index=0, end_index=1000):
+    """Returns a sequence with an amount of songs from a subset
+    of SSCS Dataset. The sequence returns song splits with a
+    fixed batch size and fixed time bin dimensions, so it can be
+    used to compose a dataset ready for training.
+
+    Parameters
+    ----------
+    ``split`` : str
+        Subset from which the songs will be picked for the sequence
+        (train, validate or test). Default is train.
+    ``start_index`` : int 
+        Index for the first song from the sequence (inclusive).
+        Default is 0.
+    ``end_index`` : int 
+        Index for the last song from the sequence (exclusive).
+        Default is 1000.
+
+    Returns
+    -------
+    ``sequence`` : SSCS_Sequence
+        Sequence of songs segmented in batches.
+    """
     return SSCS_Sequence(get_split(split)[start_index:end_index])
 
 ############################################################
 
 def get_dataset(split='train', start_index=0, end_index=1000):
+    """Returns a dataset ready to use in training, based on
+    a SSCS_Sequence.
+
+    Parameters
+    ----------
+    ``split`` : str
+        Subset from which the songs will be picked for the sequence
+        (train, validate or test). Default is train.
+    ``start_index`` : int 
+        Index for the first song from the sequence (inclusive).
+        Default is 0.
+    ``end_index`` : int 
+        Index for the last song from the sequence (exclusive).
+        Default is 1000.
+
+    Returns
+    -------
+    ``ds`` : tf.Dataset
+        Tensorflow Dataset ready to use.
+    """
     seq = get_sequence(split, 0, 2)
     mix_test, satb_test = seq.__getitem__(0)
     ds_spec = tf.TensorSpec(shape=mix_test.shape, dtype=TRAINING_DTYPE)
@@ -801,6 +1103,27 @@ def get_dataset(split='train', start_index=0, end_index=1000):
 ############################################################
 
 def downsample_threshold(item):
+
+    """Grabs a number representing the intensity of a frequency
+    bin in a specific time bin, and binarizes it. 
+
+    This function can be used when a frequency bins
+    downsample is done.
+
+    To use vectorized version, call
+    ``vectorized_downsample_threshold``.
+
+    Parameters
+    ----------
+    ``item`` : float
+        Number representing the intensity of a frequency 
+
+    Returns
+    -------
+    ``thresholded_item``: float
+        1.0 if item >= 1.0; 0.0 otherwise
+    """
+
     if item >= 1.0: return 1.0
     else: return 0.0
 
@@ -809,6 +1132,28 @@ vectorized_downsample_threshold = np.vectorize(downsample_threshold)
 ############################################################
 
 def downsample_limit(item):
+
+    """Grabs a number representing the intensity of a frequency
+    bin in a specific time bin, and limits it to the maximum
+    value of 1.0. 
+
+    This function can be used when a frequency bins
+    downsample is done.
+
+    To use vectorized version, call
+    ``vectorized_downsample_limit``.
+
+    Parameters
+    ----------
+    ``item`` : float
+        Number representing the intensity of a frequency 
+
+    Returns
+    -------
+    ``thresholded_item``: float
+        1.0 if item >= 1.0; 0.0 otherwise
+    """
+
     if item >= 1.0: return 1.0
     else: return item
 
@@ -817,6 +1162,24 @@ vectorized_downsample_limit = np.vectorize(downsample_limit)
 ############################################################
 
 def downsample_bins(voice):
+
+    """Gets a time/frequency representation of a voice as input,
+    and downsample it for 1/5 of frequency bin resolution.
+    The upper and lower bins are discarded, because they're often
+    filled with 1.0 value when the voice is in silence.
+
+    Parameters
+    ----------
+    ``voice`` : ndarray
+        360 x N matrix with time/frequency representation of a voice.
+
+    Returns
+    -------
+    ``voice_sums``: ndarray
+        69 x N matrix with downsampled time/frequency representation
+        of a voice.
+    """
+
     voice_0 = np.array(voice.T[0::5]).T
     voice_1 = np.array(voice.T[1::5]).T
     voice_2 = np.array(voice.T[2::5]).T
@@ -844,6 +1207,35 @@ def downsample_bins(voice):
 
 def create_midi(freq, write_path='./MIDI/midi_track.mid', ticks_per_beat=58,
                 tempo=90, save_to_file=True, program=53, channel=0):
+
+    """Creates a single-channel MIDI file from a ndarray of frequencies in Hz.
+
+    Parameters
+    ----------
+    ``freq`` : ndarray
+        1-D array of frequencies in Hz.
+    ``write_path`` : str
+        Path where MIDI file will be saved. Default is ``./MIDI/midi_track.mid``.
+    ``ticks_per_beat`` : int
+        Time-length parameter for mido library. Default is 58.
+    ``tempo`` : int
+        BPM parameter for mido library. Default is 90.
+    ``save_to_file`` : bool
+        Choose whether to save a MIDI file or not. If True, the function
+        saves a file in the path ``write_path`` and returns a MidiFile object.
+        If False, the function only returns the MidiFile object.
+        Default is True.
+    ``program`` : int
+        Number of the instrument (it can vary depending on the soundfont used
+        to play the file). Default is 53.
+    ``channel`` : int
+        Instrument channel to record in the MIDI file. Default is 0.
+
+    Returns
+    -------
+    ``midi``: MidiFile
+        MidiFile object from mido library.
+    """
     
     if(not os.path.exists(midi_dir)):
         os.mkdir(midi_dir)
@@ -919,6 +1311,23 @@ def create_midi(freq, write_path='./MIDI/midi_track.mid', ticks_per_beat=58,
 
 def song_to_midi(sop, alto, ten, bass, write_path='./MIDI/midi_mix.mid'):
 
+    """Creates a multi-channel MIDI file with all voices and saves it in
+    the path ``write_path``.
+
+    Parameters
+    ----------
+    ``sop`` : ndarray
+        360 x N time/frequency representation for the soprano voice.
+    ``alto`` : ndarray
+        360 x N time/frequency representation for the alto voice.
+    ``ten`` : ndarray
+        360 x N time/frequency representation for the tenor voice.
+    ``bass`` : ndarray
+        360 x N time/frequency representation for the bass voice.
+    ``write_path`` : str
+        Path where MIDI file will be saved. Default is ``./MIDI/midi_mix.mid``.
+    """
+
     bin_matrix = np.array([sop.T, alto.T, ten.T, bass.T])
 
     freq_matrix = bin_matrix_to_freq(bin_matrix)
@@ -938,6 +1347,17 @@ def song_to_midi(sop, alto, ten, bass, write_path='./MIDI/midi_mix.mid'):
 ############################################################
 
 def songname_to_midi(songname, write_path=None):
+
+    """Creates a multi-channel MIDI file from a song and saves it in
+    the path ``write_path``.
+
+    Parameters
+    ----------
+    ``songname`` : ndarray
+        360 x N time/frequency representation for the bass voice.
+    ``write_path`` : str
+        Path where MIDI file will be saved. Default is ``./MIDI/`` + songname + ``.mid``.
+    """
 
     if(not os.path.exists(midi_dir)):
         os.mkdir(midi_dir)
@@ -960,6 +1380,10 @@ def songname_to_midi(songname, write_path=None):
 ############################################################
 
 def random_song_to_midi():
+
+    """Picks a random song from SSCS Dataset and generates
+    a MIDI file from this song."""
+
     song = pick_random_song()
     songname_to_midi(song)
     mix = ray.get(read_voice.remote(song, 'mix')).to_numpy()
@@ -969,6 +1393,17 @@ def random_song_to_midi():
 ############################################################
 
 def load_weights(model, ckpt_dir=checkpoint_dir):
+
+    """Loads weights for a specified model.
+
+    Parameters
+    ----------
+    ``model`` : tf.Model
+        Tensorflow model to load weights.
+    ``ckpt_dir`` : str
+        Path to file containing the weights to be loaded to ``model``.
+    """
+
     if(os.path.exists(ckpt_dir)):
         model.load_weights(ckpt_dir)
 
@@ -976,6 +1411,26 @@ def load_weights(model, ckpt_dir=checkpoint_dir):
 
 def train(model, ds_train, ds_val, epochs=EPOCHS,
           save_model=False, ckpt_dir=checkpoint_dir, log_folder='voas_cnn'):
+    
+    """Trains a specified model.
+
+    Parameters
+    ----------
+    ``model`` : tf.Model
+        Tensorflow model to be trained.
+    ``ds_train`` : tf.Dataset
+        Dataset with train subset. This dataset can be get using the ``get_dataset`` function.
+    ``ds_val`` : tf.Dataset
+        Dataset with validation subset. This dataset can be get using the ``get_dataset`` function.
+    ``epochs`` : int
+        Number of epochs of the training. Default is EPOCHS.
+    ``save_model`` : bool
+        Choose to save (or not) the weights of the training. Default is False.
+    ``ckpt_dir`` : str
+        Path to weights file, which will be generated from the training process. Default is checkpoint_dir (check global vars).
+    ``log_folder`` : str
+        Folder name to save the training log files, which can be visualized on Tensorboard during and after the training.
+    """
 
     save_cb = tf.keras.callbacks.ModelCheckpoint(   filepath=ckpt_dir,
                                                     save_weights_only=True,
@@ -1001,6 +1456,28 @@ def train(model, ds_train, ds_val, epochs=EPOCHS,
 ############################################################
 
 def prediction_postproc(input_array, argmax_and_threshold=True, gaussian_blur=True, high_pitch_fix=False):
+
+    """Post-process the output of a model.
+
+    Parameters
+    ----------
+    ``input_array`` : ndarray
+        360 x N matrix containing time/frequency representation of a voice (output from a model prediction).
+    ``argmax_and_threshold`` : bool
+        Choose to apply (or not) argmax and threshold. Default is True.
+    ``gaussian_blur`` : bool
+        Choose to apply (or not) gaussian blur. This is only needed for visualization purposes. Default is True.
+    ``high_pitch_fix`` : bool
+        Choose to apply (or not) high pitch fix. The model may set the frequency bins 357~359 at a high value
+        during a silence in the song, and this "fix" turns all the frequency bins above 357 to value 0.0.
+        Default is False.
+
+    Returns
+    -------
+    ``prediction`` : ndarray
+        Post-processed time/frequency representation.
+    """
+
     prediction = np.moveaxis(input_array, 0, 1).reshape(360, -1)
     if(argmax_and_threshold):
         prediction = np.argmax(prediction, axis=0)
@@ -1019,6 +1496,20 @@ def prediction_postproc(input_array, argmax_and_threshold=True, gaussian_blur=Tr
 freqscale = librosa.cqt_frequencies(n_bins=360, fmin=32.7, bins_per_octave=60)
 
 def bin_to_freq(bin):
+    """Converts a bin value to a frequency value in Hz.
+
+    To use the vectorized version, call ``vec_bin_to_freq``.
+
+    Parameters
+    ----------
+    ``bin`` : int
+        The frequency bin number (between 0 and 359).
+
+    Returns
+    -------
+    ``freq`` : float
+        Frequency value in Hz.
+    """
     return freqscale[bin]
 
 vec_bin_to_freq = np.vectorize(bin_to_freq)
@@ -1026,6 +1517,24 @@ vec_bin_to_freq = np.vectorize(bin_to_freq)
 ############################################################
 
 def resample_timescale(freqs, ref_timescale):
+
+    """Resample timescale to common timebase (needed for metrics evaluation).
+    This function can be useful when calculating metrics from a frequency list
+    with a different timebase than the used on SSCS Dataset.
+
+    Parameters
+    ----------
+    ``freqs`` : ndarray
+        Array of frequencies to be resampled.
+    ``ref_timescale`` : ndarray
+        Array with timestamps for each frequency in ``freqs``.
+
+    Returns
+    -------
+    ``output_freqs`` : ndarray
+        Resampled freqs.
+    """
+
     max_time = ref_timescale[-1]
     timescale = np.arange(0, max_time, 0.011609977)
     freqs_reshape = [np.array([i]) for i in freqs.reshape(-1)]
@@ -1035,6 +1544,29 @@ def resample_timescale(freqs, ref_timescale):
 ############################################################
 
 def bin_matrix_to_freq(matrix, ref_timescale=None):
+
+    """Converts a matrix containing frequency bin values over time
+    into a matrix containing frequency values in Hz over time.
+    The matrix should have a shape (4, N), with N depending on
+    the duration of the song.
+
+    matrix[0], matrix[1], matrix[2], matrix[3] represents the
+    soprano, alto, tenor and bass voices, respectively.
+
+    Parameters
+    ----------
+    ``matrix`` : ndarray
+        Matrix containing frequency bin values for each time step.
+    ``ref_timescale`` : ndarray
+        Array with timestamps for each frequency in ``matrix``. If ``ref_timescale``
+        is set, the matrix is resampled. Default is ``None``.
+
+    Returns
+    -------
+    ``freqs`` : ndarray
+        Matrix converted to frequency values in Hz.
+    """
+
     s_freqs_raw = vec_bin_to_freq(np.argmax(matrix[0], axis=0)).reshape(-1, 1)
     a_freqs_raw = vec_bin_to_freq(np.argmax(matrix[1], axis=0)).reshape(-1, 1)
     t_freqs_raw = vec_bin_to_freq(np.argmax(matrix[2], axis=0)).reshape(-1, 1)
@@ -1057,11 +1589,52 @@ def bin_matrix_to_freq(matrix, ref_timescale=None):
 ############################################################
 
 def f_score(precision, recall):
+
+    """Calculates F-Score metric from Precision and Recall values.
+
+    Parameters
+    ----------
+    ``precision`` : float
+        Precision metric value.
+    ``recall`` : float
+        Recall metric value.
+
+    Returns
+    -------
+    ``fscore`` : float
+        F-Score metric value.
+    """
+
     return 2 * (precision * recall) / (precision + recall + K.epsilon())
 
 ############################################################
 
 def __metrics_aux(ref_time, ref_freqs, est_time, est_freqs):
+
+    """Auxiliar function to compute evaluation metrics for the model.
+
+    This function gets as input the frequencies from the reference annotation
+    of a voice from a song and the estimated frequency annotation of this song
+    from a model along with them respective timestamp arrays, and retrieve a
+    dataframe with metrics calculated with the ``mir_eval`` library.
+
+    Parameters
+    ----------
+    ``ref_time`` : ndarray
+        Array with reference annotation timestamp.
+    ``ref_freqs`` : ndarray
+        Array with reference annotation frequencies.
+    ``est_time`` : ndarray
+        Array with estimated annotation timestamp.
+    ``est_freqs`` : ndarray
+        Array with estimated annotation frequencies.
+
+    Returns
+    -------
+    ``metrics_df`` : pd.DataFrame
+        Dataframe with melody and multipitch metrics calculated with ``mir_eval`` library.
+    """
+
     multipitch_metrics = mir_eval.multipitch.evaluate(ref_time, ref_freqs, est_time, est_freqs)
     melody_metrics = mir_eval.melody.evaluate(ref_time, np.squeeze(ref_freqs), est_time, np.squeeze(est_freqs))
     multipitch_metrics['F-Measure'] = f_score(multipitch_metrics['Precision'], multipitch_metrics['Recall'])
@@ -1073,6 +1646,49 @@ def __metrics_aux(ref_time, ref_freqs, est_time, est_freqs):
 ############################################################
 
 def metrics(y_true_matrix, y_pred_matrix, true_timescale=None):
+
+    """Function to calculate evaluation metrics for all the voices of a song.
+
+    This function gets as input the matrix with all the reference voice annotations
+    and a matrix with all the estimated voice annotations. If needed, the timescale
+    for the reference annotations can be passed as an argument, and the reference
+    annotations will be resampled.
+    
+    The function returns five dataframes with the metrics calculated for the mix
+    and for the individual voices. All metrics are calculated using the
+    ``mir_eval`` library.
+
+    Parameters
+    ----------
+    ``y_true_matrix`` : ndarray
+        Matrix containing the reference frequency annotations for each voice
+        (soprano, alto, tenor and bass, in this order).
+    ``y_pred_matrix`` : ndarray
+        Matrix containing the estimated frequency annotations for each voice
+        (soprano, alto, tenor and bass, in this order).
+    ``true_timescale`` : ndarray
+        If set, the reference frequency annotations will be resampled.
+        Default is ``None``.
+
+    Returns
+    -------
+    ``mix_metrics_df`` : pd.DataFrame
+        Dataframe with multipitch metrics calculated for mixed voices with
+        ``mir_eval`` library.
+    ``s_metrics_df`` : pd.DataFrame
+        Dataframe with melody and multipitch metrics calculated for Soprano voice
+        with ``mir_eval`` library.
+    ``a_metrics_df`` : pd.DataFrame
+        Dataframe with melody and multipitch metrics calculated for Alto voice
+        with ``mir_eval`` library.
+    ``t_metrics_df`` : pd.DataFrame
+        Dataframe with melody and multipitch metrics calculated for Tenor voice
+        with ``mir_eval`` library.
+    ``b_metrics_df`` : pd.DataFrame
+        Dataframe with melody and multipitch metrics calculated for Bass voice
+        with ``mir_eval`` library.
+    """
+
     timescale = np.arange(0, 0.011609977 * (y_pred_matrix.shape[1]), 0.011609977)[:y_pred_matrix.shape[1]]
     
     if(true_timescale is None):
@@ -1109,6 +1725,37 @@ def metrics(y_true_matrix, y_pred_matrix, true_timescale=None):
 ############################################################
 
 def metrics_test_precompute(model, save_dir):
+
+    """Precompute metrics for a choosen model for each song in the test subset
+    of the SSCS Dataset. Saves the precomputed metrics as a HDF5 file in a 
+    given file path.
+
+    Parameters
+    ----------
+    ``model`` : tf.Model
+        Model with trained weights to be evaluated.
+    ``save_dir`` : str
+        Path to file in which the precomputed metrics will be saved.
+
+    Returns
+    -------
+    ``mix_df`` : pd.DataFrame
+        Dataframe with multipitch metrics calculated for mixed voices with
+        ``mir_eval`` library.
+    ``sop_df`` : pd.DataFrame
+        Dataframe with melody and multipitch metrics calculated for Soprano voice
+        with ``mir_eval`` library.
+    ``alto_df`` : pd.DataFrame
+        Dataframe with melody and multipitch metrics calculated for Alto voice
+        with ``mir_eval`` library.
+    ``ten_df`` : pd.DataFrame
+        Dataframe with melody and multipitch metrics calculated for Tenor voice
+        with ``mir_eval`` library.
+    ``bass_df`` : pd.DataFrame
+        Dataframe with melody and multipitch metrics calculated for Bass voice
+        with ``mir_eval`` library.
+    """
+
     #set amount to 805 to calculate metrics to entire test set
     amount = 805
     songs = pick_songlist(amount=amount, split='test')
@@ -1168,6 +1815,33 @@ def metrics_test_precompute(model, save_dir):
 ############################################################
 
 def metrics_load_precomputed(file_path):
+
+    """Load precomputed metrics from a HDF5 file in a given file path.
+
+    Parameters
+    ----------
+    ``file_path`` : str
+        Path to file from which the precomputed metrics will be loaded.
+
+    Returns
+    -------
+    ``mix_df`` : pd.DataFrame
+        Dataframe with multipitch metrics calculated for mixed voices with
+        ``mir_eval`` library.
+    ``sop_df`` : pd.DataFrame
+        Dataframe with melody and multipitch metrics calculated for Soprano voice
+        with ``mir_eval`` library.
+    ``alto_df`` : pd.DataFrame
+        Dataframe with melody and multipitch metrics calculated for Alto voice
+        with ``mir_eval`` library.
+    ``ten_df`` : pd.DataFrame
+        Dataframe with melody and multipitch metrics calculated for Tenor voice
+        with ``mir_eval`` library.
+    ``bass_df`` : pd.DataFrame
+        Dataframe with melody and multipitch metrics calculated for Bass voice
+        with ``mir_eval`` library.
+    """
+
     mix_df = pd.read_hdf(file_path, key='mix', mode='r')
     sop_df = pd.read_hdf(file_path, key='soprano', mode='r')
     alto_df = pd.read_hdf(file_path, key='alto', mode='r')
@@ -1178,6 +1852,13 @@ def metrics_load_precomputed(file_path):
 ############################################################
 
 def playground(model):
+    """Arbitrary function only for demonstration and "play around and find out" purposes.
+
+    Parameters
+    ----------
+    ``model`` : tf.Model
+        Pretrained model for play around.
+    """
     rand_song = pick_random_song(split='test')
     mix, s, a, t, b = read_all_voice_splits(rand_song)
 
