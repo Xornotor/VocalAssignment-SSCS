@@ -9,6 +9,7 @@ numpy
 pandas
 scipy
 matplotlib
+seaborn
 jupyterlab
 ipywidgets
 librosa
@@ -22,4 +23,3 @@ typing-extensions==4.5.0
 pydantic<2
 pydantic-core<2
 pillow
--e .
