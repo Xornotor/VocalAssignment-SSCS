@@ -1,3 +1,12 @@
+'''
+va_plots.py
+Developed by André Paiva - 2023
+
+The va_plots module was created to provide functions in order to
+facilitate the plot of graphs of evaluated metrics, activation maps
+and F0 annotations heatmaps.
+'''
+
 import numpy as np
 import pandas as pd
 import matplotlib as mpl

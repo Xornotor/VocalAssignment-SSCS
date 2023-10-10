@@ -1,3 +1,13 @@
+'''
+va_utils.py
+Developed by André Paiva - 2023
+
+The va_utils module was created to provide functions in order to
+facilitate the implementation, management, training and metrics
+evaluation (with SSCS test subset) of the proposed Voice Assignment
+models.
+'''
+
 import os
 import hdf5plugin
 import h5py

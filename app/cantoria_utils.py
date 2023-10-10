@@ -1,3 +1,12 @@
+'''
+cantoria_utils.py
+Developed by André Paiva - 2023
+
+The cantoria_utils module was created to provide functions in order
+to facilitate the metrics evaluation of the Voice Assignment models
+with Cantoría Dataset.
+'''
+
 import math
 import numpy as np
 import pandas as pd
