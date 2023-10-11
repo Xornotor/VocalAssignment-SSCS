@@ -23,3 +23,14 @@ typing-extensions==4.5.0
 pydantic<2
 pydantic-core<2
 pillow
+audioread==3.0.0
+jams==0.3.4
+joblib==1.1.1
+muda==0.4.1
+pescador==2.1.0
+pumpp==0.6.0
+pysoundfile
+soundfile==0.12.1
+sox==1.4.1
+samplerate==0.1.0
+resampy==0.4.2

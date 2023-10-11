@@ -1,5 +1,5 @@
 {
-	"name": "Existing Dockerfile",
+	"name": "VocalAssignment-SSCS",
 
 	"build": {
 		"context": "..",
