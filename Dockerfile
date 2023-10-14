@@ -1,4 +1,4 @@
-FROM tensorflow/tensorflow:latest-gpu-jupyter
+FROM tensorflow/tensorflow:2.13.0-gpu-jupyter
 WORKDIR /app
 COPY requirements.txt .
 RUN apt -y update && apt -y install libsndfile1 && apt -y clean
