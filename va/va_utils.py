@@ -1421,7 +1421,8 @@ def load_weights(model, ckpt_dir=checkpoint_dir):
 ############################################################
 
 def train(model, ds_train, ds_val, epochs=EPOCHS,
-          save_model=False, ckpt_dir=checkpoint_dir, log_folder='voas_cnn'):
+          save_model=False, ckpt_dir=checkpoint_dir,
+          log_folder='voas_cnn', early_stopping=None):
     
     """Trains a specified model.
 
@@ -1442,27 +1443,29 @@ def train(model, ds_train, ds_val, epochs=EPOCHS,
     ``log_folder`` : str
         Folder name to save the training log files, which can be visualized on Tensorboard during and after the training.
     """
+    
+    logdir = log_dir + log_folder + "/" + datetime.datetime.now().strftime("%Y%m%d-%H%M%S")
+    tensorboard_cb = tf.keras.callbacks.TensorBoard(log_dir=logdir, histogram_freq=1)
 
-    save_cb = tf.keras.callbacks.ModelCheckpoint(   filepath=ckpt_dir,
+    callbacks = [tensorboard_cb]
+    if(save_model):
+        save_cb = tf.keras.callbacks.ModelCheckpoint(   filepath=ckpt_dir,
                                                     save_weights_only=True,
                                                     verbose=1,
                                                     monitor='val_loss',
                                                     save_best_only=True
                                                 )
-    
-    logdir = log_dir + log_folder + "/" + datetime.datetime.now().strftime("%Y%m%d-%H%M%S")
-    tensorboard_cb = tf.keras.callbacks.TensorBoard(log_dir=logdir, histogram_freq=1)
+        callbacks.append(save_cb)
+    if(early_stopping is not None):
+        early_cb = tf.keras.callbacks.EarlyStopping(monitor='val_loss',
+                                                    patience=early_stopping)
+        callbacks.append(early_cb)
 
-    if(save_model):
-        model.fit(  ds_train,
-                    epochs=epochs,
-                    callbacks=[save_cb, tensorboard_cb],
-                    validation_data=ds_val)
-    else:
-        model.fit(  ds_train,
-                    epochs=epochs,
-                    callbacks=[tensorboard_cb],
-                    validation_data=ds_val)
+
+    model.fit(  ds_train,
+                epochs=epochs,
+                callbacks=callbacks,
+                validation_data=ds_val)
 
 ############################################################
 
