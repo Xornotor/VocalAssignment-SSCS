@@ -24,5 +24,5 @@
 |   #1   |  #1  | 50     | 5e-3  | 24         | 256        | 4 horas         | 220 ms/step         | Sim         | Sim (6 epochs) | 3200  | 800 | 805  |
 |   #1   |  #2  | 50     | 5e-3  | 24         | 256        | 3 horas         | 230 ms/step         | Sim         | Sim (6 epochs) | 3200  | 800 | 805  |
 |   #1   |  #3  | 50     | 5e-3  | 24         | 256        | 3 horas         | 212 ms/step         | Sim         | Sim (6 epochs) | 3200  | 800 | 805  |
-|   #1   |  #4  | 50     | 5e-3  | 24         | 256        | X horas         |                     | Sim         | Sim (6 epochs) | 3200  | 800 | 805  |
+|   #1   |  #4  | 50     | 5e-3  | 24         | 256        | 3,25 horas      | 217 ms/step         | Sim         | Sim (6 epochs) | 3200  | 800 | 805  |
 |   #1   |  #5  | 50     | 5e-3  | 24         | 256        | X horas         |                     | Sim         | Sim (6 epochs) | 3200  | 800 | 805  |
