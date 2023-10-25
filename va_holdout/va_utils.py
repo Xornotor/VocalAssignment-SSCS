@@ -1103,7 +1103,8 @@ def get_dataset(split='train', start_index=0, end_index=1000):
         ds = tf.data.Dataset.from_generator(SSCS_Sequence,
                                     args = [get_split(split)[start_index:end_index]],
                                     output_signature=signature
-                                    ).shuffle(10, reshuffle_each_iteration=True).prefetch(tf.data.AUTOTUNE)
+                                    ).shuffle(10, seed=30,
+                                              reshuffle_each_iteration=True).prefetch(tf.data.AUTOTUNE)
     else:
         ds = tf.data.Dataset.from_generator(SSCS_Sequence,
                                     args = [get_split(split)[start_index:end_index]],
