@@ -21,13 +21,13 @@
 
 | Treino | Fold | Epochs | Alpha | Batch Size | Split Size | Tempo de treino | Tensorboard | Early Stopping | Train | Dev | Test |
 |--------|------|--------|-------|------------|------------|-----------------|-------------|----------------|-------|-----|------|
-|   #1   |  #1  | 50     | 5e-3  | 24         | 256        | 4 horas         | Sim         | Sim (6 epochs) | 3200  | 800 | 805  |
-|   #1   |  #2  | 50     | 5e-3  | 24         | 256        | 3 horas         | Sim         | Sim (6 epochs) | 3200  | 800 | 805  |
-|   #1   |  #3  | 50     | 5e-3  | 24         | 256        | 3 horas         | Sim         | Sim (6 epochs) | 3200  | 800 | 805  |
-|   #1   |  #4  | 50     | 5e-3  | 24         | 256        | 3,25 horas      | Sim         | Sim (6 epochs) | 3200  | 800 | 805  |
-|   #1   |  #5  | 50     | 5e-3  | 24         | 256        | 4 horas         | Sim         | Sim (6 epochs) | 3200  | 800 | 805  |
-|   #2   |  #1  | 50     | 5e-4  | 24         | 256        | 8 horas         | Sim         | Sim (6 epochs) | 3200  | 800 | 805  |
-|   #2   |  #2  | 50     | 5e-4  | 24         | 256        | X horas         | Sim         | Sim (6 epochs) | 3200  | 800 | 805  |
-|   #2   |  #3  | 50     | 5e-4  | 24         | 256        | X horas         | Sim         | Sim (6 epochs) | 3200  | 800 | 805  |
+|   #1   |  #1  | 50 (12) | 5e-3  | 24         | 256        | 4 horas         | Sim         | Sim (6 epochs) | 3200  | 800 | 805  |
+|   #1   |  #2  | 50 (9)  | 5e-3  | 24         | 256        | 3 horas         | Sim         | Sim (6 epochs) | 3200  | 800 | 805  |
+|   #1   |  #3  | 50 (9)  | 5e-3  | 24         | 256        | 3 horas         | Sim         | Sim (6 epochs) | 3200  | 800 | 805  |
+|   #1   |  #4  | 50 (10) | 5e-3  | 24         | 256        | 3,25 horas      | Sim         | Sim (6 epochs) | 3200  | 800 | 805  |
+|   #1   |  #5  | 50 (9)  | 5e-3  | 24         | 256        | 4 horas         | Sim         | Sim (6 epochs) | 3200  | 800 | 805  |
+|   #2   |  #1  | 50 (23) | 5e-4  | 24         | 256        | 8 horas         | Sim         | Sim (6 epochs) | 3200  | 800 | 805  |
+|   #2   |  #2  | 50 (12) | 5e-4  | 24         | 256        | 4 horas         | Sim         | Sim (6 epochs) | 3200  | 800 | 805  |
+|   #2   |  #3  | 50 (10) | 5e-4  | 24         | 256        | 3 horas         | Sim         | Sim (6 epochs) | 3200  | 800 | 805  |
 |   #2   |  #4  | 50     | 5e-4  | 24         | 256        | X horas         | Sim         | Sim (6 epochs) | 3200  | 800 | 805  |
 |   #2   |  #5  | 50     | 5e-4  | 24         | 256        | X horas         | Sim         | Sim (6 epochs) | 3200  | 800 | 805  |
