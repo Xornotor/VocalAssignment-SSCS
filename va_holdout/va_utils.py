@@ -880,7 +880,7 @@ def pick_songlist(first=0, amount=5, split='train'):
     """
     
     songnames = get_split(split)
-    return songnames
+    return songnames[first:first+amount]
 
 ############################################################
 
@@ -1736,6 +1736,97 @@ def metrics(y_true_matrix, y_pred_matrix, true_timescale=None):
     mix_metrics_df = pd.DataFrame([mix_multipitch_metrics]).astype('float64')
 
     return mix_metrics_df, s_metrics_df, a_metrics_df, t_metrics_df, b_metrics_df
+
+############################################################
+
+def metrics_val_precompute(model, save_dir, songlist):
+
+    """Precompute metrics for a choosen model for each song in a given
+    validation subset of the SSCS Dataset. Saves the precomputed metrics
+    as a HDF5 file in a given file path.
+
+    Parameters
+    ----------
+    ``model`` : tf.Model
+        Model with trained weights to be evaluated.
+    ``save_dir`` : str
+        Path to file in which the precomputed metrics will be saved.
+    ``songlist`` : list of str
+        Subset from SSCS Dataset to precompute metrics.
+
+    Returns
+    -------
+    ``mix_df`` : pd.DataFrame
+        Dataframe with multipitch metrics calculated for mixed voices with
+        ``mir_eval`` library.
+    ``sop_df`` : pd.DataFrame
+        Dataframe with melody and multipitch metrics calculated for Soprano voice
+        with ``mir_eval`` library.
+    ``alto_df`` : pd.DataFrame
+        Dataframe with melody and multipitch metrics calculated for Alto voice
+        with ``mir_eval`` library.
+    ``ten_df`` : pd.DataFrame
+        Dataframe with melody and multipitch metrics calculated for Tenor voice
+        with ``mir_eval`` library.
+    ``bass_df`` : pd.DataFrame
+        Dataframe with melody and multipitch metrics calculated for Bass voice
+        with ``mir_eval`` library.
+    """
+    
+    amount = len(songlist)
+    songs = songlist
+
+    true_f0 = []
+    pred_f0 = []
+
+    mix_df = pd.DataFrame()
+    sop_df = pd.DataFrame()
+    alto_df = pd.DataFrame()
+    ten_df = pd.DataFrame()
+    bass_df = pd.DataFrame()
+
+    counter = 1
+
+    for song in songs:
+        print(f"Predicting on Model {model.name}, Song {counter}/{amount}")
+        counter += 1
+        voice_splits = read_all_voice_splits(song)
+        voice_pred = model.predict(voice_splits[0])
+        true_grids = np.array([np.moveaxis(split, 0, 1).reshape(360, -1) for split in voice_splits])[1:]
+        pred_grids = np.array([prediction_postproc(pred).astype(np.float32) for pred in voice_pred])
+        true_f0.append(bin_matrix_to_freq(true_grids))
+        pred_f0.append(bin_matrix_to_freq(pred_grids))
+
+    print(f"Calculating metrics for Model {model.name}...")
+
+    @ray.remote
+    def precompute_calc(true_freq, pred_freq, songname):
+        mix_song_df, s_song_df, a_song_df, t_song_df, b_song_df = metrics(true_freq, pred_freq)
+        mix_song_df.insert(loc=0, column='Songname', value=songname)
+        s_song_df.insert(loc=0, column='Songname', value=songname)
+        a_song_df.insert(loc=0, column='Songname', value=songname)
+        t_song_df.insert(loc=0, column='Songname', value=songname)
+        b_song_df.insert(loc=0, column='Songname', value=songname)
+        return [mix_song_df, s_song_df, a_song_df, t_song_df, b_song_df]
+
+    precompute_array = [precompute_calc.remote(ray.put(true_f0[idx]),
+                                               ray.put(pred_f0[idx]),
+                                               ray.put(songs[idx])) for idx in range(amount)]    
+    precompute = ray.get(precompute_array)
+
+    mix_df = pd.concat([precompute[i][0] for i in range(amount)], axis=0, ignore_index=True)
+    sop_df = pd.concat([precompute[i][1] for i in range(amount)], axis=0, ignore_index=True)
+    alto_df = pd.concat([precompute[i][2] for i in range(amount)], axis=0, ignore_index=True)
+    ten_df = pd.concat([precompute[i][3] for i in range(amount)], axis=0, ignore_index=True)
+    bass_df = pd.concat([precompute[i][4] for i in range(amount)], axis=0, ignore_index=True)
+
+    mix_df.to_hdf(save_dir, 'mix', mode='w', complevel=9, complib='blosc', append=False, format='table')
+    sop_df.to_hdf(save_dir, 'soprano', mode='a', complevel=9, complib='blosc', append=True, format='table')
+    alto_df.to_hdf(save_dir, 'alto', mode='a', complevel=9, complib='blosc', append=True, format='table')
+    ten_df.to_hdf(save_dir, 'tenor', mode='a', complevel=9, complib='blosc', append=True, format='table')
+    bass_df.to_hdf(save_dir, 'bass', mode='a', complevel=9, complib='blosc', append=True, format='table')
+    
+    return mix_df, sop_df, alto_df, ten_df, bass_df
 
 ############################################################
 
