@@ -115,22 +115,16 @@ def mix_metrics(s_true, s_pred,
 
 ############################################################
 
-def cantoria_metrics(model_type: int):
+def full_metrics(model):
 
-    """Calculates metrics for Cantoría Dataset predicted multi-pitch estimations
-    with ``mir_eval`` library. The metrics are computed for each voice and for
-    the mix. 
+    """Given a model with weights loaded, calculates metrics for Cantoría
+    Dataset predicted multi-pitch estimations with ``mir_eval`` library.
+    The metrics are computed for each voice and for the mix.
 
     Parameters
     ----------
-    ``model_type`` : int
-        Number that represents the model.
-        0: MaskVoasCNN
-        1: MaskVoasCNNv2
-        2: DownsampleVoasCNN
-        3: DownsampleVoasCNNv2
-        4: VoasCNN (Retrained weights)
-        5: VoasCNN (Original weights)
+    ``model`` : tf.Model
+        Pre-trained TensorFlow model.
 
     Returns
     -------
@@ -146,32 +140,13 @@ def cantoria_metrics(model_type: int):
         Dataframe containing calculated metrics for bass
     """
 
-    songlist = ['CEA', 'EJB1', 'EJB2', 'HCB', 'LBM1', 'LBM2', 'LJT1', 'LJT2', 'LNG', 'RRC', 'SSS', 'THM', 'VBP', 'YSM']
-    if (model_type == 0):
-        ckpt_dir = './Checkpoints/mask_voas_treino1.keras'
-        model = va_utils.mask_voas_cnn_model()
-    elif (model_type == 1):
-        ckpt_dir = './Checkpoints/mask_voas_v2_treino1.keras'
-        model = va_utils.mask_voas_cnn_v2_model()
-    elif (model_type == 2):
-        ckpt_dir = './Checkpoints/downsample_voas_treino1.keras'
-        model = va_utils.downsample_voas_cnn_model()
-    elif (model_type == 3):
-        ckpt_dir = './Checkpoints/downsample_voas_v2_treino1.keras'
-        model = va_utils.downsample_voas_cnn_v2_model()
-    elif (model_type == 4):
-        ckpt_dir = './Checkpoints/voas_treino1.keras'
-        model = va_utils.voas_cnn_model()
-    elif (model_type == 5):
-        ckpt_dir = './Checkpoints/voas_cnn_original.h5'
-        model = va_utils.voas_cnn_model()
-    va_utils.load_weights(model, ckpt_dir=ckpt_dir)
-
     mix_df = pd.DataFrame()
     sop_df = pd.DataFrame()
     alto_df = pd.DataFrame()
     ten_df = pd.DataFrame()
     bass_df = pd.DataFrame()
+
+    songlist = ['CEA', 'EJB1', 'EJB2', 'HCB', 'LBM1', 'LBM2', 'LJT1', 'LJT2', 'LNG', 'RRC', 'SSS', 'THM', 'VBP', 'YSM']
 
     for song in songlist:
         df_audio = pd.read_hdf('Datasets/Cantoria/Audio/Cantoria_' + song + '_Mix.h5', key='mix', mode='r')
@@ -248,4 +223,96 @@ def cantoria_metrics(model_type: int):
     bass_df = bass_df.set_index('Songname')
     mix_df = mix_df.set_index('Songname')
 
+    return mix_df, sop_df, alto_df, ten_df, bass_df
+
+############################################################
+
+def compute_holdout_metrics(model_type: int):
+
+    """Calculates metrics for Cantoría Dataset predicted multi-pitch estimations
+    with ``mir_eval`` library. The metrics are computed for each voice and for
+    the mix. To be used with models trained with holdout technique.
+
+    Parameters
+    ----------
+    ``model_type`` : int
+        Number that represents the model.
+        0: MaskVoasCNN
+        1: MaskVoasCNNv2
+        2: DownsampleVoasCNN
+        3: DownsampleVoasCNNv2
+        4: VoasCNN (Retrained weights)
+        5: VoasCNN (Original weights)
+
+    Returns
+    -------
+    ``mix_df`` : pd.DataFrame
+        Dataframe containing calculated metrics for mix
+    ``sop_df`` : pd.DataFrame
+        Dataframe containing calculated metrics for soprano
+    ``alto_df`` : pd.DataFrame
+        Dataframe containing calculated metrics for alto
+    ``ten_df`` : pd.DataFrame
+        Dataframe containing calculated metrics for tenor
+    ``bass_df`` : pd.DataFrame
+        Dataframe containing calculated metrics for bass
+    """
+ 
+    if (model_type == 0):
+        ckpt_dir = './Checkpoints/mask_voas_treino1.keras'
+        model = va_utils.mask_voas_cnn_model()
+    elif (model_type == 1):
+        ckpt_dir = './Checkpoints/mask_voas_v2_treino1.keras'
+        model = va_utils.mask_voas_cnn_v2_model()
+    elif (model_type == 2):
+        ckpt_dir = './Checkpoints/downsample_voas_treino1.keras'
+        model = va_utils.downsample_voas_cnn_model()
+    elif (model_type == 3):
+        ckpt_dir = './Checkpoints/downsample_voas_v2_treino1.keras'
+        model = va_utils.downsample_voas_cnn_v2_model()
+    elif (model_type == 4):
+        ckpt_dir = './Checkpoints/voas_treino1.keras'
+        model = va_utils.voas_cnn_model()
+    elif (model_type == 5):
+        ckpt_dir = './Checkpoints/voas_cnn_original.h5'
+        model = va_utils.voas_cnn_model()
+    va_utils.load_weights(model, ckpt_dir=ckpt_dir)
+
+    mix_df, sop_df, alto_df, ten_df, bass_df = full_metrics(model)
+    return mix_df, sop_df, alto_df, ten_df, bass_df
+
+############################################################
+
+def compute_kfold_metrics(train: int, fold: int):
+
+    """Calculates metrics for Cantoría Dataset predicted multi-pitch estimations
+    with ``mir_eval`` library. The metrics are computed for each voice and for
+    the mix. To be used with models trained with K-Fold technique (MaskVoasCNNv2).
+
+    Parameters
+    ----------
+    ``train`` : int
+        Training number.
+    ``fold`` : int
+        Fold number.
+
+    Returns
+    -------
+    ``mix_df`` : pd.DataFrame
+        Dataframe containing calculated metrics for mix
+    ``sop_df`` : pd.DataFrame
+        Dataframe containing calculated metrics for soprano
+    ``alto_df`` : pd.DataFrame
+        Dataframe containing calculated metrics for alto
+    ``ten_df`` : pd.DataFrame
+        Dataframe containing calculated metrics for tenor
+    ``bass_df`` : pd.DataFrame
+        Dataframe containing calculated metrics for bass
+    """
+ 
+    model = va_utils.mask_voas_cnn_v2_model()
+    ckpt_dir = './Checkpoints/mask_voas_v2_treino' + str(train) + '_kfold_' + str(fold) + '.keras'
+    va_utils.load_weights(model, ckpt_dir=ckpt_dir)
+
+    mix_df, sop_df, alto_df, ten_df, bass_df = full_metrics(model)
     return mix_df, sop_df, alto_df, ten_df, bass_df
