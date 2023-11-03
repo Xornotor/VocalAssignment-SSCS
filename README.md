@@ -1,5 +1,12 @@
 # **Vocal Assignment**
 
+## **Próximos passos de implementação**
+
+*   Revisar postproc das redes de VA;
+*   Revisar cálculo de desempenho do SSCS e do Cantoría após revisão do postproc;
+*   Implementar função para medida comparativa dos K-Folds.
+
+
 ## **Hiperparâmetros e dados de treino**
 
 ### **Holdout**
