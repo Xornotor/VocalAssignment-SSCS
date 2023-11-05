@@ -30,6 +30,7 @@ from tensorflow.keras.optimizers import Adam
 from tensorflow.keras.losses import BinaryCrossentropy, Reduction
 from tensorflow.keras.layers import Input, Resizing, Conv2D, BatchNormalization, Multiply
 from keras import backend as K
+from copy import deepcopy
 import logging
 import ray
 import va_plots
@@ -46,6 +47,7 @@ SPLIT_SIZE = 256
 BATCH_SIZE = 24
 LEARNING_RATE = 2e-3
 RESIZING_FILTER = 'bilinear'
+SATB_THRESHOLDS = [0.23, 0.17, 0.15, 0.17]
 
 ############################################################
 
@@ -1345,9 +1347,9 @@ def song_to_midi(sop, alto, ten, bass, write_path='./MIDI/midi_mix.mid'):
     freq_matrix = bin_matrix_to_freq(bin_matrix)
 
     mid_sop = create_midi(freq_matrix[0], save_to_file=False, program=52, channel=0)
-    mid_alto = create_midi(freq_matrix[1], save_to_file=False, program=53, channel=1)
-    mid_ten = create_midi(freq_matrix[2], save_to_file=False, program=49, channel=2)
-    mid_bass = create_midi(freq_matrix[3], save_to_file=False, program=50, channel=3)
+    mid_alto = create_midi(freq_matrix[1], save_to_file=False, program=52, channel=1)
+    mid_ten = create_midi(freq_matrix[2], save_to_file=False, program=52, channel=2)
+    mid_bass = create_midi(freq_matrix[3], save_to_file=False, program=52, channel=3)
 
     mid_mix = mido.MidiFile()
     mid_mix.ticks_per_beat=mid_sop.ticks_per_beat
@@ -1470,7 +1472,9 @@ def train(model, ds_train, ds_val, epochs=EPOCHS,
 
 ############################################################
 
-def prediction_postproc(input_array, argmax_and_threshold=True, gaussian_blur=True, high_pitch_fix=False):
+def prediction_postproc(input_array, argmax_and_threshold=True,
+                                     gaussian_blur=True,
+                                     threshold_value=0):
 
     """Post-process the output of a model.
 
@@ -1482,10 +1486,8 @@ def prediction_postproc(input_array, argmax_and_threshold=True, gaussian_blur=Tr
         Choose to apply (or not) argmax and threshold. Default is True.
     ``gaussian_blur`` : bool
         Choose to apply (or not) gaussian blur. This is only needed for visualization purposes. Default is True.
-    ``high_pitch_fix`` : bool
-        Choose to apply (or not) high pitch fix. The model may set the frequency bins 357~359 at a high value
-        during a silence in the song, and this "fix" turns all the frequency bins above 357 to value 0.0.
-        Default is False.
+    ``threshold_value`` : float
+        Threshold value for voicing.
 
     Returns
     -------
@@ -1494,10 +1496,10 @@ def prediction_postproc(input_array, argmax_and_threshold=True, gaussian_blur=Tr
     """
 
     prediction = np.moveaxis(input_array, 0, 1).reshape(360, -1)
+    thres_reference = deepcopy(prediction)
     if(argmax_and_threshold):
         prediction = np.argmax(prediction, axis=0)
-        if(high_pitch_fix):
-            prediction = np.array([i if i <= 357 else 0 for i in prediction])
+        prediction = np.array([prediction[i] if thres_reference[prediction[i], i] >= threshold_value else 0 for i in np.arange(prediction.size)])
         threshold = np.zeros((360, prediction.shape[0]))
         threshold[prediction, np.arange(prediction.size)] = 1
         prediction = threshold
@@ -1793,7 +1795,7 @@ def metrics_val_precompute(model, save_dir, songlist):
         voice_splits = read_all_voice_splits(song)
         voice_pred = model.predict(voice_splits[0])
         true_grids = np.array([np.moveaxis(split, 0, 1).reshape(360, -1) for split in voice_splits])[1:]
-        pred_grids = np.array([prediction_postproc(pred).astype(np.float32) for pred in voice_pred])
+        pred_grids = np.array([prediction_postproc(voice_pred[i], threshold_value=SATB_THRESHOLDS[i]).astype(np.float32) for i in range(4)])
         true_f0.append(bin_matrix_to_freq(true_grids))
         pred_f0.append(bin_matrix_to_freq(pred_grids))
 
@@ -1883,7 +1885,7 @@ def metrics_test_precompute(model, save_dir):
         voice_splits = read_all_voice_splits(song)
         voice_pred = model.predict(voice_splits[0])
         true_grids = np.array([np.moveaxis(split, 0, 1).reshape(360, -1) for split in voice_splits])[1:]
-        pred_grids = np.array([prediction_postproc(pred).astype(np.float32) for pred in voice_pred])
+        pred_grids = np.array([prediction_postproc(voice_pred[i], threshold_value=SATB_THRESHOLDS[i]).astype(np.float32) for i in range(4)])
         true_f0.append(bin_matrix_to_freq(true_grids))
         pred_f0.append(bin_matrix_to_freq(pred_grids))
 
@@ -1978,10 +1980,10 @@ def playground(model):
 
     y_true = np.array([s, a, t, b])
 
-    s_pred_postproc = prediction_postproc(s_pred).astype(np.float32)
-    a_pred_postproc = prediction_postproc(a_pred).astype(np.float32)
-    t_pred_postproc = prediction_postproc(t_pred).astype(np.float32)
-    b_pred_postproc = prediction_postproc(b_pred).astype(np.float32)
+    s_pred_postproc = prediction_postproc(s_pred, threshold_value=SATB_THRESHOLDS[0]).astype(np.float32)
+    a_pred_postproc = prediction_postproc(a_pred, threshold_value=SATB_THRESHOLDS[1]).astype(np.float32)
+    t_pred_postproc = prediction_postproc(t_pred, threshold_value=SATB_THRESHOLDS[2]).astype(np.float32)
+    b_pred_postproc = prediction_postproc(b_pred, threshold_value=SATB_THRESHOLDS[3]).astype(np.float32)
     mix_pred_postproc = s_pred_postproc + a_pred_postproc + t_pred_postproc + b_pred_postproc
     mix_pred_postproc = vectorized_downsample_limit(mix_pred_postproc)
 

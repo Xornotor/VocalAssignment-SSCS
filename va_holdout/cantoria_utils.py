@@ -16,6 +16,7 @@ import mir_eval
 
 TRUE_THRES = 20
 PRED_THRES = 32.7
+SATB_THRESHOLDS = [0.23, 0.17, 0.15, 0.17]
 
 ############################################################
 
@@ -178,10 +179,10 @@ def full_metrics(model):
             t_pred = np.append(t_pred, t_pred_batch, axis=0)
             b_pred = np.append(b_pred, b_pred_batch, axis=0)
 
-        s_pred = va_utils.prediction_postproc(s_pred, high_pitch_fix=True)[:, :mix.shape[1]]
-        a_pred = va_utils.prediction_postproc(a_pred, high_pitch_fix=True)[:, :mix.shape[1]]
-        t_pred = va_utils.prediction_postproc(t_pred, high_pitch_fix=True)[:, :mix.shape[1]]
-        b_pred = va_utils.prediction_postproc(b_pred, high_pitch_fix=True)[:, :mix.shape[1]]
+        s_pred = va_utils.prediction_postproc(s_pred, threshold_value=SATB_THRESHOLDS[0])[:, :mix.shape[1]]
+        a_pred = va_utils.prediction_postproc(a_pred, threshold_value=SATB_THRESHOLDS[1])[:, :mix.shape[1]]
+        t_pred = va_utils.prediction_postproc(t_pred, threshold_value=SATB_THRESHOLDS[2])[:, :mix.shape[1]]
+        b_pred = va_utils.prediction_postproc(b_pred, threshold_value=SATB_THRESHOLDS[3])[:, :mix.shape[1]]
 
         s_pred_freqs = va_utils.vec_bin_to_freq(np.argmax(s_pred, axis=0)).reshape(-1)
         a_pred_freqs = va_utils.vec_bin_to_freq(np.argmax(a_pred, axis=0)).reshape(-1)
