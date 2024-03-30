@@ -32,3 +32,8 @@ This repository contains the source codes for models, experiments, performance e
 To facilitate the use of the proposed solution, a graphical application was made available in [https://huggingface.co/spaces/Xornotor/Choral-Quartets-F0-Extractor](https://huggingface.co/spaces/Xornotor/Choral-Quartets-F0-Extractor).
 
 The full monograph is available at [https://repositorio.ufba.br/handle/ri/38854](https://repositorio.ufba.br/handle/ri/38854), in Brazilian Portuguese.
+
+---
+
+### Apresentação do TCC no Youtube
+[![Apresentação do TCC no Youtube](https://i.ytimg.com/vi/A0ZgducwTMU/maxresdefault.jpg)](https://www.youtube.com/watch?v=A0ZgducwTMU)
