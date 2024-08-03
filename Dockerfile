@@ -1,7 +1,7 @@
-FROM tensorflow/tensorflow:2.13.0-gpu-jupyter
+FROM tensorflow/tensorflow:2.14.0-gpu-jupyter
 WORKDIR /app
 COPY requirements.txt .
-RUN apt -y update && apt -y install libsndfile1 && apt -y clean
+RUN apt -y update && apt -y install libsndfile1 build-essential cmake && apt -y clean
 RUN pip install -r requirements.txt && pip cache purge
 RUN rm requirements.txt
 EXPOSE 8888 
