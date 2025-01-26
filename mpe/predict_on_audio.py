@@ -54,7 +54,7 @@ def main(args):
     audio_folder = args.audio_folder
 
     save_key = 'exp3multif0'
-    model_path = "./models/{}.pkl".format(save_key)
+    model_path = "./models/{}.h5".format(save_key)
     model = models.build_model3()
     model.load_weights(model_path)
     thresh = 0.5
