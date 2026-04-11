@@ -30,4 +30,4 @@ jobs:
 
     - name: Run API Tests
       run: |
-        pytest app/test.py -v
+        pytest app/test.py -v --tb=short --log-cli-level=INFO
