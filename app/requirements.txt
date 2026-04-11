@@ -13,4 +13,3 @@ librosa==0.10.2.post1
 matplotlib==3.8.0
 pytest
 wave
-unittest
