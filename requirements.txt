@@ -3,7 +3,7 @@ hdf5plugin==4.4.0
 h5py==3.9.0
 tables==3.9.2
 mido==1.3.2
-requests==2.32.0
+requests==2.33.0
 psutil==5.9.5
 numpy==1.26.0
 pandas==2.2.2
