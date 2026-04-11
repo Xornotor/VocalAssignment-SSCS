@@ -1,6 +1,7 @@
 # Choral Quartets Voice Assignment for Pitch Transcription
 
-[![Docker Image CI](https://github.com/Xornotor/VocalAssignment-SSCS/actions/workflows/docker-image.yml/badge.svg)](https://github.com/Xornotor/VocalAssignment-SSCS/actions/workflows/docker-image.yml)
+[![Docker](https://github.com/Xornotor/VocalAssignment-SSCS/actions/workflows/docker-image.yml/badge.svg)](https://github.com/Xornotor/VocalAssignment-SSCS/actions/workflows/docker-image.yml)
+[![Gradio App](https://github.com/Xornotor/VocalAssignment-SSCS/actions/workflows/python-app.yml/badge.svg)](https://github.com/Xornotor/VocalAssignment-SSCS/actions/workflows/python-app.yml)
 
 ### In this project:
 [![NumPy](https://img.shields.io/badge/numpy-%23013243.svg?style=for-the-badge&logo=numpy&logoColor=white)]()
