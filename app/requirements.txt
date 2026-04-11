@@ -10,5 +10,5 @@ hdf5plugin==4.4.0
 h5py==3.9.0
 tables==3.9.2
 soundfile==0.13.1
-librosa==0.10.2.post1
+librosa==0.11.0
 matplotlib==3.8.0
