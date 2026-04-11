@@ -1,5 +1,7 @@
 # Transcrição de notas musicais de quartetos *a cappella*
 
+[![Docker Image CI](https://github.com/Xornotor/VocalAssignment-SSCS/actions/workflows/docker-image.yml/badge.svg)](https://github.com/Xornotor/VocalAssignment-SSCS/actions/workflows/docker-image.yml)
+
 ### Neste projeto (in this project):
 [![NumPy](https://img.shields.io/badge/numpy-%23013243.svg?style=for-the-badge&logo=numpy&logoColor=white)]()
 [![Pandas](https://img.shields.io/badge/pandas-%23150458.svg?style=for-the-badge&logo=pandas&logoColor=white)]()
