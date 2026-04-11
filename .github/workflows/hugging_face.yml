@@ -1,0 +1,22 @@
+name: Hugging Face
+on:
+  push:
+    branches: [main]
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          lfs: true
+
+      - name: Sync to Hugging Face Hub
+        uses: huggingface/hub-sync@v0.1.0
+        with:
+          github_repo_id: ${{ github.repository }}
+          huggingface_repo_id: Xornotor/Choral-Quartets-F0-Extractor
+          hf_token: ${{ secrets.HF_TOKEN }}
+          repo_type: space
+          subdirectory: "app"
