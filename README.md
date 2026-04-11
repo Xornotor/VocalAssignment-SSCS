@@ -2,6 +2,7 @@
 
 [![Docker](https://github.com/Xornotor/VocalAssignment-SSCS/actions/workflows/docker-image.yml/badge.svg)](https://github.com/Xornotor/VocalAssignment-SSCS/actions/workflows/docker-image.yml)
 [![Gradio App](https://github.com/Xornotor/VocalAssignment-SSCS/actions/workflows/python-app.yml/badge.svg)](https://github.com/Xornotor/VocalAssignment-SSCS/actions/workflows/python-app.yml)
+[![Hugging Face](https://github.com/Xornotor/VocalAssignment-SSCS/actions/workflows/hugging_face.yml/badge.svg)](https://github.com/Xornotor/VocalAssignment-SSCS/actions/workflows/hugging_face.yml)
 
 ### In this project:
 [![NumPy](https://img.shields.io/badge/numpy-%23013243.svg?style=for-the-badge&logo=numpy&logoColor=white)]()
