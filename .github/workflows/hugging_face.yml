@@ -1,10 +1,14 @@
 name: Hugging Face
 on:
-  push:
+  workflow_run:
+    workflows: ["Gradio App Test"]
     branches: [main]
+    types:
+      - completed
 
 jobs:
   sync:
+    if: ${{ github.event.workflow_run.conclusion == 'success' }}
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
