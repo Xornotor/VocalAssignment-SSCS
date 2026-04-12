@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "Choral-Quartets-F0-Extractor"
-version = "0.2.1-beta"
+version = "0.3.0"
 description = "An application that uses Multi-Pitch Estimation and Voice Assignment to transform audio files with Choral Quartets recordings into files (CSV, HDF5 and MIDI) containing F0 estimations for each voice (Soprano, Alto, Tenor and Bass)."
 authors = ["André Paiva (Xornotor) <andre.paiva@ufba.br>"]
 license = "cc"
