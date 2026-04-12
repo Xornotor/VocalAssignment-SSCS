@@ -8,11 +8,11 @@
 
     "customizations": {
         "vscode": {
-        	"extensions": ["ms-toolsai.jupyter", "ms-python.python"]
+        	"extensions": ["ms-toolsai.jupyter", "ms-python.python", "fill-labs.dependi"]
  		}
     },
 
-    "forwardPorts": [8888, 6006],
+    "forwardPorts": [8888, 6006, 7860],
 
 	"runArgs": ["-it", "--rm", "--gpus=all"]
 }

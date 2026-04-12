@@ -22,10 +22,12 @@ jobs:
 
     - name: Install requirements
       run: |
+        sudo apt-get update
+        sudo apt-get install -y libsndfile1
         python -m pip install --upgrade pip
         pip install pytest pytest-mock
         pip install -r app/requirements.txt
 
     - name: Run API Tests
       run: |
-        pytest app/test.py -v
+        cd app && pytest test.py -v --tb=short --log-cli-level=INFO
