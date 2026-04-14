@@ -35,4 +35,4 @@ soundfile==0.13.1,
 sox==1.5.0
 samplerate==0.2.1
 resampy==0.4.3
-pytest==9.0
+pytest==9.0.3
