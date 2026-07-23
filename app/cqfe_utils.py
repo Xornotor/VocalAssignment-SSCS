@@ -223,7 +223,7 @@ def compute_pump_features(pump, audio_fpath):
 
 ############################################################
 
-@spaces.GPU(duration=60)
+@spaces.GPU(duration=600)
 def get_mpe_prediction(model, audio_file=None):
     """Generate output from a model given an input numpy file.
        Part of this function is part of deepsalience
@@ -261,7 +261,7 @@ def get_mpe_prediction(model, audio_file=None):
 
 ############################################################
 
-@spaces.GPU(duration=60)
+@spaces.GPU(duration=600)
 def get_va_prediction(model, f0_matrix):
     splits = f0_matrix.shape[1]//256
     splits_diff = 256 - (f0_matrix.shape[1] - splits * 256)
