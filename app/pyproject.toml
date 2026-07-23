@@ -22,6 +22,7 @@ h5py = "^3.9"
 tables = "^3.9"
 librosa = "^0.11"
 matplotlib = "^3.8"
+spaces = "^0.51.1"
 
 [build-system]
 requires = ["poetry-core"]

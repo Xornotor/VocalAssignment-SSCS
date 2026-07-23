@@ -12,3 +12,4 @@ tables==3.9.2
 soundfile==0.14.0
 librosa==0.11.0
 matplotlib==3.8.0
+spaces==0.51.1
