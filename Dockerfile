@@ -6,7 +6,7 @@ RUN python -m pip install --upgrade pip && pip install -r requirements.txt && pi
 RUN rm requirements.txt
 EXPOSE 8888 
 EXPOSE 6006
-EXPOSE 7860'
+EXPOSE 7860
 
 #ARG UID=10001
 #RUN adduser \
