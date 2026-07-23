@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "Choral-Quartets-F0-Extractor"
-version = "0.3.0"
+version = "0.4.0"
 description = "An application that uses Multi-Pitch Estimation and Voice Assignment to transform audio files with Choral Quartets recordings into files (CSV, HDF5 and MIDI) containing F0 estimations for each voice (Soprano, Alto, Tenor and Bass)."
 authors = ["André Paiva (Xornotor) <andre.paiva@ufba.br>"]
 license = "cc"
@@ -8,9 +8,9 @@ readme = "README.md"
 packages = [{include = "Choral_Quartets_F0_Extractor"}]
 
 [tool.poetry.dependencies]
-python = "^3.11"
+python = "^3.12.12"
 tensorflow-cpu = "^2.14"
-gradio = "^6.7"
+gradio = "^6.20"
 typing-extensions = "^4.15"
 mido = "^1.3.3"
 pumpp = "^0.6"
@@ -20,8 +20,9 @@ pandas = "^2.2"
 hdf5plugin = "^4.4"
 h5py = "^3.9"
 tables = "^3.9"
-librosa = "^0.10"
+librosa = "^0.11"
 matplotlib = "^3.8"
+spaces = "^0.51.1"
 
 [build-system]
 requires = ["poetry-core"]
